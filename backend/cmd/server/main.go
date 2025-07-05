@@ -13,11 +13,17 @@ import (
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/config"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/middleware"
+	user "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/user"
+	"github.com/timur-harin/sum25-go-flutter-course/backend/pkg/db"
+	
 )
 
 func main() {
 	// Load configuration
 	cfg := config.Load()
+	if err := db.Init(cfg); err != nil {
+    	log.Fatalf("DB init failed: %v", err)
+}
 
 	// Initialize Gin router
 	if cfg.Env == "production" {
@@ -39,6 +45,21 @@ func main() {
 	{
 		api.GET("/ping", handlers.Ping)
 		// Add more routes as needed
+		users := api.Group("/users")
+		{
+			users.POST("/register", user.Register)
+			users.POST("/login", user.Login)
+
+			// protected routes
+			users.Use(middleware.Auth())
+			{
+				users.GET("/profile", user.GetProfile)
+				users.PUT("/profile", user.UpdateProfile)
+				users.POST("/friends/request", user.RequestFriend)
+				users.GET("/friends", user.ListFriends)
+				users.POST("/achievements", user.AwardAchievement)
+			}
+		}
 	}
 
 	// Create HTTP server

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:device_preview/device_preview.dart';
+import 'screens/profile_screen.dart';
 
-import 'screens/home_screen.dart';
-import 'screens/about_screen.dart';
+import 'screens/auth_screen.dart';
+import 'screens/register_screen.dart';
+
 
 void main() {
   runApp(const ProviderScope(child: CourseApp()));
@@ -15,9 +18,13 @@ class CourseApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'Summer 2025 Go + Flutter Course',
+      title: 'Activity Tracker Auth',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        colorScheme: ColorScheme.light(
+          primary: Colors.white,
+          secondary: const Color(0xFFF8BBD0), // Soft pink
+        ),
+        scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
       ),
       routerConfig: _router,
@@ -26,20 +33,15 @@ class CourseApp extends StatelessWidget {
 }
 
 final GoRouter _router = GoRouter(
-  routes: <RouteBase>[
+  routes: [
     GoRoute(
       path: '/',
-      builder: (BuildContext context, GoRouterState state) {
-        return const HomeScreen();
-      },
-      routes: <RouteBase>[
-        GoRoute(
-          path: '/about',
-          builder: (BuildContext context, GoRouterState state) {
-            return const AboutScreen();
-          },
-        ),
-      ],
+      builder: (context, state) => const AuthScreen(),
     ),
+    GoRoute(
+      path: '/register',
+      builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(path: '/profile', builder: (ctx, st) => const ProfileScreen()),
   ],
 );
