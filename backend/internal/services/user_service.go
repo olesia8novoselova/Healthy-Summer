@@ -2,8 +2,9 @@
 package services
 
 import (
-	"database/sql"
+	//"database/sql"
 	"errors"
+	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -17,7 +18,9 @@ import (
 // ProfileUpdateInput matches your JSON input for updating profile.
 type ProfileUpdateInput struct {
 	Name  string `json:"name"`
-	Email string `json:"email"`
+	AvatarURL string `json:"avatarUrl"`
+	Weight *float64 `json:"weight"`
+	Height *float64 `json:"height"`
 }
 
 // UserProfile is what you return to the client.
@@ -26,6 +29,8 @@ type UserProfile struct {
 	Name      string `json:"name"`
 	Email     string `json:"email"`
 	AvatarURL string `json:"avatarUrl"`
+	Weight    *float64 `json:"weight"`
+	Height    *float64 `json:"height"`
 }
 
 // Friend for client responses.
@@ -45,7 +50,6 @@ type Achievement struct {
 
 // userService holds the DB handle.
 type userService struct {
-	
 }
 
 // User is the exported singleton service.
@@ -98,7 +102,7 @@ func (u *userService) Authenticate(email, pass string) (string, error) {
 func (u *userService) GetProfile(userID string) (UserProfile, error) {
 	var user models.User
 	err := db.DB.Get(&user, `
-		SELECT id, name, email, avatar_url 
+		SELECT id, name, email, avatar_url, weight, height 
 		FROM users 
 		WHERE id = $1
 	`, userID)
@@ -111,6 +115,8 @@ func (u *userService) GetProfile(userID string) (UserProfile, error) {
 		Name:      user.Name,
 		Email:     user.Email,
 		AvatarURL: user.AvatarURL,
+		Weight:    user.Weight,
+		Height:    user.Height,
 	}, nil
 }
 
@@ -118,9 +124,12 @@ func (u *userService) GetProfile(userID string) (UserProfile, error) {
 func (u *userService) UpdateProfile(userID string, in ProfileUpdateInput) error {
 	_, err := db.DB.Exec(`
 		UPDATE users 
-		SET name = $1, email = $2, updated_at = $3
-		WHERE id = $4
-	`, in.Name, in.Email, time.Now(), userID)
+		SET name = $1, avatar_url = $2, weight = $3, height = $4
+		WHERE id = $5
+	`, in.Name, in.AvatarURL, in.Weight, in.Height, userID)
+	if err != nil {
+		log.Printf("UpdateProfile error: %v", err)
+	}
 	return err
 }
 
@@ -159,36 +168,7 @@ func (u *userService) ListFriends(userID string) ([]Friend, error) {
 }
 
 // AwardNextAchievement finds the next locked achievement and awards it.
-func (u *userService) AwardNextAchievement(userID string) error {
-	// 1) find next locked achievement
-	var achID string
-	err := db.DB.Get(&achID, `
-		SELECT a.id
-		FROM achievements a
-		WHERE NOT EXISTS(
-		  SELECT 1 
-		  FROM user_achievements ua
-		  WHERE ua.achievement_id = a.id AND ua.user_id = $1
-		)
-		ORDER BY a.created_at
-		LIMIT 1
-	`, userID)
 
-	// no rows = nothing left to award
-	if err == sql.ErrNoRows || errors.Is(err, sql.ErrNoRows) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	// 2) insert into user_achievements
-	_, err = db.DB.Exec(`
-		INSERT INTO user_achievements (id, user_id, achievement_id, unlocked_at)
-		VALUES ($1, $2, $3, $4)
-	`, uuid.NewString(), userID, achID, time.Now())
-	return err
-}
 
 // List only unlocked achievements for the user
 func (u *userService) ListUnlockedAchievements(userID string) ([]Achievement, error) {

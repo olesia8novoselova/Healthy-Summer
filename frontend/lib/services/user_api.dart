@@ -99,36 +99,39 @@ class UserApi {
 }
 
   Future<void> sendFriendRequest(String friendEmail) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-  final response = await http.post(
-    Uri.parse('$baseUrl/friends/request'),
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    },
-    body: jsonEncode({'email': friendEmail}),
-  );
-  if (response.statusCode != 200) {
-    throw Exception('Failed to send friend request: ${response.body}');
-  }
-}
-
-  Future<void> createAchievement(WidgetRef ref, String title, String iconUrl) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
     final response = await http.post(
-      Uri.parse('$baseUrl/achievements'),
+      Uri.parse('$baseUrl/friends/request'),
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $token',
       },
-      body: jsonEncode({'title': title, 'iconUrl': iconUrl}),
+      body: jsonEncode({'email': friendEmail}),
     );
-    ref.invalidate(achievementsProvider);
-
     if (response.statusCode != 200) {
-      throw Exception('Failed to create achievement: ${response.body}');
+      throw Exception('Failed to send friend request: ${response.body}');
+    }
+  }
+
+  Future<void> updateProfile(String name, String avatarUrl, double? weight, double? height) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    final resp = await http.put(
+      Uri.parse('$baseUrl/profile'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'name': name,
+        'avatarUrl': avatarUrl,
+        'weight': weight,
+        'height': height,
+      }),
+    );
+    if (resp.statusCode != 200) {
+      throw Exception('Failed to update profile');
     }
   }
 }

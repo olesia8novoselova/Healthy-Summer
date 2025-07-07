@@ -66,7 +66,6 @@ func main() {
 				users.PUT("/profile", user.UpdateProfile)
 				users.POST("/friends/request", user.RequestFriend)
 				users.GET("/friends", user.ListFriends)
-				users.POST("/achievements", user.AwardAchievement)
 				users.GET("/achievements", user.ListAllAchievements)
 				users.GET("users/achievements", user.ListUserAchievements)
 			}

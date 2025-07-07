@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/user_profile.dart';
 import '../services/auth_provider.dart';
 import '../services/providers.dart';
 import 'package:go_router/go_router.dart';
@@ -11,7 +12,6 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authAsync = ref.watch(authProvider);
     final friendsAsync = ref.watch(friendsProvider);
-    final achievementsAsync = ref.watch(achievementsProvider);
     final userAchievementsAsync = ref.watch(userAchievementsProvider);
 
 
@@ -42,8 +42,45 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Welcome, ${authState.profile!['name']}', style: TextStyle(fontSize: 20, color: Colors.pink)),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundImage: (authState.profile!['avatarUrl'] != null && authState.profile!['avatarUrl'].isNotEmpty)
+                          ? NetworkImage(authState.profile!['avatarUrl'])
+                          : null,
+                      radius: 30,
+                      backgroundColor: Colors.pink[50],
+                      child: (authState.profile!['avatarUrl'] == null || authState.profile!['avatarUrl'].isEmpty)
+                          ? Icon(Icons.person, color: Colors.pink, size: 32)
+                          : null,
+                    ),
+                    SizedBox(width: 16),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(authState.profile!['name'], style: TextStyle(fontSize: 18, color: Colors.pink)),
+                        Text('Weight: ${authState.profile!['weight']?.toStringAsFixed(1) ?? "--"} kg', style: TextStyle(color: Colors.pink)),
+                        Text('Height: ${authState.profile!['height']?.toStringAsFixed(1) ?? "--"} cm', style: TextStyle(color: Colors.pink)),
+                      ],
+                    ),
+                    Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.edit, color: Colors.pink),
+                      onPressed: () => showDialog(
+                        context: context,
+                        builder: (ctx) => EditProfileDialog(
+                          profile: UserProfile.fromJson(authState.profile!), // INSERT IT HERE
+                          onSave: (name, avatarUrl, weight, height) async {
+                            await ref.read(userApiProvider).updateProfile(name, avatarUrl, weight, height);
+                            ref.invalidate(authProvider);
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
                 SizedBox(height: 24),
+
                 // Friends
                 Text('Friends', style: TextStyle(fontSize: 18, color: Colors.pink, fontWeight: FontWeight.bold)),
                 friendsAsync.when(
@@ -107,13 +144,6 @@ class ProfileScreen extends ConsumerWidget {
                               Row(
                                 children: [
                                   TextButton(
-                                    onPressed: () => showDialog(
-                                      context: context,
-                                      builder: (ctx) => AddAchievementDialog(ref: ref),
-                                    ),
-                                    child: Text('Add Achievement', style: TextStyle(color: Colors.pink)),
-                                  ),
-                                  TextButton(
                                     onPressed: () => context.push('/all_achievements'),
                                     child: Text('See All Achievements', style: TextStyle(color: Colors.pink)),
                                   ),
@@ -130,13 +160,6 @@ class ProfileScreen extends ConsumerWidget {
                               )),
                               Row(
                                 children: [
-                                  TextButton(
-                                    onPressed: () => showDialog(
-                                      context: context,
-                                      builder: (ctx) => AddAchievementDialog(ref: ref),
-                                    ),
-                                    child: Text('Add Achievement', style: TextStyle(color: Colors.pink)),
-                                  ),
                                   TextButton(
                                     onPressed: () => context.push('/all_achievements'),
                                     child: Text('See All Achievements', style: TextStyle(color: Colors.pink)),
@@ -226,71 +249,72 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
   }
 }
 
-class AddAchievementDialog extends StatefulWidget {
-  final WidgetRef ref;
-  const AddAchievementDialog({required this.ref, super.key});
+class EditProfileDialog extends StatefulWidget {
+  final UserProfile profile;
+  final void Function(String name, String avatarUrl, double? weight, double? height) onSave;
+  const EditProfileDialog({required this.profile, required this.onSave, super.key});
 
   @override
-  State<AddAchievementDialog> createState() => _AddAchievementDialogState();
+  State<EditProfileDialog> createState() => _EditProfileDialogState();
 }
 
-class _AddAchievementDialogState extends State<AddAchievementDialog> {
-  final _titleController = TextEditingController();
-  final _iconUrlController = TextEditingController();
-  String? _error;
-  bool _loading = false;
+class _EditProfileDialogState extends State<EditProfileDialog> {
+  late TextEditingController _nameController;
+  late TextEditingController _avatarController;
+  late TextEditingController _weightController;
+  late TextEditingController _heightController;
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.profile.name);
+    _avatarController = TextEditingController(text: widget.profile.avatarUrl);
+    _weightController = TextEditingController(text: widget.profile.weight?.toString() ?? '');
+    _heightController = TextEditingController(text: widget.profile.height?.toString() ?? '');
+  }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Add Achievement', style: TextStyle(color: Colors.pink)),
+      title: Text('Edit Profile', style: TextStyle(color: Colors.pink)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           TextField(
-            controller: _titleController,
-            decoration: InputDecoration(
-              labelText: 'Title',
-              labelStyle: TextStyle(color: Colors.pink),
-            ),
+            controller: _nameController,
+            decoration: InputDecoration(labelText: 'Name', labelStyle: TextStyle(color: Colors.pink)),
           ),
-          if (_error != null) ...[
-            SizedBox(height: 8),
-            Text(_error!, style: TextStyle(color: Colors.red)),
-          ],
+          TextField(
+            controller: _avatarController,
+            decoration: InputDecoration(labelText: 'Avatar URL', labelStyle: TextStyle(color: Colors.pink)),
+          ),
+          TextField(
+            controller: _weightController,
+            decoration: InputDecoration(labelText: 'Weight (kg)', labelStyle: TextStyle(color: Colors.pink)),
+            keyboardType: TextInputType.number,
+          ),
+          TextField(
+            controller: _heightController,
+            decoration: InputDecoration(labelText: 'Height (cm)', labelStyle: TextStyle(color: Colors.pink)),
+            keyboardType: TextInputType.number,
+          ),
         ],
       ),
-      
       actions: [
         TextButton(
-          onPressed: _loading ? null : () async {
-            setState(() {
-              _loading = true;
-              _error = null;
-            });
-            try {
-              // You must implement a userApi.createAchievement(title, iconUrl)
-              await widget.ref.read(userApiProvider).createAchievement(
-                widget.ref,
-                _titleController.text,
-                _iconUrlController.text,
-              );
-              Navigator.pop(context);
-              // widget.ref.refresh(achievementsProvider); // if/when you have a GET endpoint
-            } catch (e) {
-              setState(() {
-                _error = e.toString().replaceFirst('Exception:', '').trim();
-              });
-            } finally {
-              setState(() { _loading = false; });
-            }
+          onPressed: () {
+            widget.onSave(
+              _nameController.text,
+              _avatarController.text,
+              double.tryParse(_weightController.text),
+              double.tryParse(_heightController.text),
+            );
+            Navigator.pop(context);
           },
-          child: _loading
-              ? SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-              : Text('Add', style: TextStyle(color: Colors.pink)),
+          child: Text('Save', style: TextStyle(color: Colors.pink)),
         ),
         TextButton(
-          onPressed: _loading ? null : () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context),
           child: Text('Cancel', style: TextStyle(color: Colors.pink)),
         ),
       ],
