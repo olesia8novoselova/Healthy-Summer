@@ -29,6 +29,13 @@ func Register(c *gin.Context) {
         return
     }
 
+    // Award "Welcome!" achievement (use the actual UUID from your DB!)
+    if err := services.User.AwardAchievementToUserByTitle(req.Email, "Welcome!"); err != nil {
+        log.Printf("Failed to award Welcome achievement: %v", err)
+        // This can be non-fatal, don't return
+    }
+    log.Printf("Awarded 'Welcome!' achievement to user %s", req.Email)
+
     // Authenticate to generate JWT
     token, err := services.User.Authenticate(req.Email, req.Password)
     if err != nil {
@@ -36,7 +43,7 @@ func Register(c *gin.Context) {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to generate token"})
         return
     }
-    log.Printf("JWT after registration for %s: %s", req.Email, token)
+    //log.Printf("JWT after registration for %s: %s", req.Email, token)
 
 
     // Return token in response

@@ -189,3 +189,57 @@ func (u *userService) AwardNextAchievement(userID string) error {
 	`, uuid.NewString(), userID, achID, time.Now())
 	return err
 }
+
+// List only unlocked achievements for the user
+func (u *userService) ListUnlockedAchievements(userID string) ([]Achievement, error) {
+    var achievements []Achievement
+    err := db.DB.Select(&achievements, `
+        SELECT a.id, a.title, true as unlocked
+        FROM achievements a
+        JOIN user_achievements ua ON a.id = ua.achievement_id
+        WHERE ua.user_id = $1
+    `, userID)
+    return achievements, err
+}
+
+// List all possible achievements (for the "all achievements" page)
+func (u *userService) ListAllAchievements() ([]Achievement, error) {
+    var achievements []Achievement
+    err := db.DB.Select(&achievements, `
+        SELECT a.id, a.title, false as unlocked
+        FROM achievements a
+    `)
+    return achievements, err
+}
+
+func (u *userService) AwardAchievementToUserByTitle(email, title string) error {
+    var userID string
+    err := db.DB.Get(&userID, `SELECT id FROM users WHERE email = $1`, email)
+    if err != nil {
+        return err
+    }
+
+    var achID string
+    err = db.DB.Get(&achID, `SELECT id FROM achievements WHERE title = $1`, title)
+    if err != nil {
+        return err
+    }
+
+    // Check if already awarded to avoid duplicate
+    var exists bool
+    err = db.DB.Get(&exists, `SELECT EXISTS (
+        SELECT 1 FROM user_achievements WHERE user_id = $1 AND achievement_id = $2
+    )`, userID, achID)
+    if err == nil && exists {
+        return nil // Already awarded, nothing to do
+    }
+
+    // Insert award
+    _, err = db.DB.Exec(`
+        INSERT INTO user_achievements (user_id, achievement_id)
+        VALUES ($1, $2)
+    `, userID, achID)
+    return err
+}
+
+

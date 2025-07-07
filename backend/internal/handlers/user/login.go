@@ -2,7 +2,7 @@
 package user
 
 import (
-	"log"
+	
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -26,7 +26,7 @@ func Login(c *gin.Context) {
         c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
         return
     }
-    log.Printf("JWT after login for %s: %s", req.Email, token)
+    //log.Printf("JWT after login for %s: %s", req.Email, token)
 
 
     // Return the token in JSON so the client can store it

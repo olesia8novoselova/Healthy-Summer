@@ -1,5 +1,8 @@
 // providers.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../models/achievement.dart';
+import '../models/friend.dart';
 import 'auth_api.dart';
 import 'user_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,5 +54,22 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 }
+
+final userApiProvider = Provider((ref) => UserApi());
+
+final friendsProvider = FutureProvider<List<Friend>>((ref) async {
+  final api = ref.read(userApiProvider);
+  return api.fetchFriends();
+});
+
+final achievementsProvider = FutureProvider<List<Achievement>>((ref) async {
+  final api = ref.read(userApiProvider);
+  return api.fetchAchievements();
+});
+
+final userAchievementsProvider = FutureProvider<List<Achievement>>((ref) async {
+  final userApi = ref.read(userApiProvider);
+  return userApi.fetchUserAchievements();
+});
 
 

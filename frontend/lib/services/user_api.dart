@@ -1,7 +1,12 @@
 // user_api.dart
 import 'dart:convert';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../models/friend.dart';
+import '../models/achievement.dart';
+import 'providers.dart';
 
 class UserApi {
   static const String baseUrl = 'http://localhost:8080/api/v1/users';
@@ -32,5 +37,98 @@ class UserApi {
       }
     } catch (_) {}
     return 'Unknown error: ${resp.body}';
+  }
+
+    Future<List<Friend>> fetchFriends() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    final resp = await http.get(
+      Uri.parse('$baseUrl/friends'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    if (resp.statusCode == 200) {
+      final data = jsonDecode(resp.body) as List;
+      return data.map((e) => Friend.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load friends');
+    }
+  }
+
+  Future<List<Achievement>> fetchAchievements() async {
+    print('Fetching achievements...');
+
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    final resp = await http.get(
+      Uri.parse('$baseUrl/achievements'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+    );
+    print('Achievements response: ${resp.body}');
+    if (resp.statusCode == 200) {
+      final data = jsonDecode(resp.body) as List;
+      return data.map((e) => Achievement.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load achievements');
+    }
+  }
+
+  Future<List<Achievement>> fetchUserAchievements() async {
+  print('Fetching user achievements...');
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final resp = await http.get(
+    Uri.parse('$baseUrl/users/achievements'), // <-- NOTE: /users/achievements
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  print('User achievements response: ${resp.body}');
+  if (resp.statusCode == 200) {
+    final data = jsonDecode(resp.body) as List;
+    return data.map((e) => Achievement.fromJson(e)).toList();
+  } else {
+    throw Exception('Failed to load user achievements');
+  }
+}
+
+  Future<void> sendFriendRequest(String friendEmail) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final response = await http.post(
+    Uri.parse('$baseUrl/friends/request'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+    body: jsonEncode({'email': friendEmail}),
+  );
+  if (response.statusCode != 200) {
+    throw Exception('Failed to send friend request: ${response.body}');
+  }
+}
+
+  Future<void> createAchievement(WidgetRef ref, String title, String iconUrl) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    final response = await http.post(
+      Uri.parse('$baseUrl/achievements'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({'title': title, 'iconUrl': iconUrl}),
+    );
+    ref.invalidate(achievementsProvider);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to create achievement: ${response.body}');
+    }
   }
 }

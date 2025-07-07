@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'screens/profile_screen.dart';
-
+import 'screens/all_achievements_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/register_screen.dart';
 
@@ -42,5 +42,9 @@ final GoRouter _router = GoRouter(
       builder: (context, state) => RegisterScreen(),
     ),
     GoRoute(path: '/profile', builder: (ctx, st) => ProfileScreen()),
+    GoRoute(
+      path: '/all_achievements',
+      builder: (context, state) => AllAchievementsScreen(),
+    ),
   ],
 );

@@ -1,7 +1,6 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 	"strings"
 
@@ -17,7 +16,7 @@ func Auth() gin.HandlerFunc {
             c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
             return
         }
-        log.Println("Authorization header received:", header)
+        //log.Println("Authorization header received:", header)
         
 
 
@@ -35,8 +34,8 @@ func Auth() gin.HandlerFunc {
             c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
             return
         }
-        
-        log.Println("Token part extracted:", tokenStr)
+
+        //log.Println("Token part extracted:", tokenStr)
 
         // 4. Inject userID into context for handlers
         c.Set("userID", claims.UserID)

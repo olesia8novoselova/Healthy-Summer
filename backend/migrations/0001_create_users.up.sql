@@ -8,21 +8,18 @@ CREATE TABLE IF NOT EXISTS users (
   avatar_url   TEXT
 );
 
-CREATE TABLE IF NOT EXISTS achievements (
+CREATE TABLE achievements (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  name        TEXT NOT NULL,
-  description TEXT NOT NULL,
+  title       TEXT NOT NULL,
   created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS user_achievements (
-  id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+CREATE TABLE user_achievements (
+  id             UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id        UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   achievement_id UUID NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
-  created_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  unlocked_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
 CREATE TABLE IF NOT EXISTS friend_requests (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   requester_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,

@@ -28,7 +28,7 @@ func main() {
 	if err := db.Init(cfg); err != nil {
     	log.Fatalf("DB init failed: %v", err)
 	}
-	log.Println("Loaded JWT_SECRET:", cfg.JWTSecret)
+	//log.Println("Loaded JWT_SECRET:", cfg.JWTSecret)
 
 
 	// Initialize Gin router
@@ -67,6 +67,8 @@ func main() {
 				users.POST("/friends/request", user.RequestFriend)
 				users.GET("/friends", user.ListFriends)
 				users.POST("/achievements", user.AwardAchievement)
+				users.GET("/achievements", user.ListAllAchievements)
+				users.GET("users/achievements", user.ListUserAchievements)
 			}
 		}
 	}

@@ -6,7 +6,6 @@ import "time"
 type Achievement struct {
     ID        string    `db:"id" json:"id"`
     Title     string    `db:"title" json:"title"`
-    IconURL   string    `db:"icon_url" json:"iconUrl"`
     CreatedAt time.Time `db:"created_at" json:"createdAt"`
 }
 
