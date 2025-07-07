@@ -9,8 +9,9 @@ type Claims struct {
 }
 
 func GenerateToken(claims Claims) (string, error) {
+    cfg := config.Load()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte("secretkey"))
+	return token.SignedString([]byte(cfg.JWTSecret))
 }
 
 // ParseToken verifies the JWT and returns the custom claims

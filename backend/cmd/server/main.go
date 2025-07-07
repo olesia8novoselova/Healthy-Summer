@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+	"github.com/joho/godotenv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/config"
@@ -19,11 +20,16 @@ import (
 )
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+    log.Println("No .env file found, relying on real environment")
+}
 	// Load configuration
 	cfg := config.Load()
 	if err := db.Init(cfg); err != nil {
     	log.Fatalf("DB init failed: %v", err)
-}
+	}
+	log.Println("Loaded JWT_SECRET:", cfg.JWTSecret)
+
 
 	// Initialize Gin router
 	if cfg.Env == "production" {
@@ -51,7 +57,10 @@ func main() {
 			users.POST("/login", user.Login)
 
 			// protected routes
-			users.Use(middleware.Auth())
+			
+		    users.Use(middleware.Auth())
+		    
+			
 			{
 				users.GET("/profile", user.GetProfile)
 				users.PUT("/profile", user.UpdateProfile)

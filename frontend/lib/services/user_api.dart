@@ -1,74 +1,36 @@
-// lib/services/user_api.dart
-
+// user_api.dart
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../models/user_profile.dart';
-import '../models/friend.dart';
-import '../models/achievement.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class UserApi {
-  static const _host = String.fromEnvironment(
-    'API_HOST',
-    defaultValue: 'http://localhost:8080',
-  );
+  static const String baseUrl = 'http://localhost:8080/api/v1/users';
 
-  /// Base URL ends up as 'http://localhost:8080/api/v1'
-  final String baseUrl;
-  final _client = http.Client();
-
-  UserApi({ String? baseUrl })
-      : baseUrl = baseUrl ?? '$_host/api/v1';
-
-  Future<UserProfile> getProfile() async {
-    final uri = Uri.parse('$baseUrl/users/profile');
-    final res = await _client.get(uri);
-    if (res.statusCode != 200) {
-      throw Exception('Failed to load profile');
-    }
-    return UserProfile.fromJson(json.decode(res.body));
-  }
-
-  Future<void> updateProfile(UserProfile profile) async {
-    final uri = Uri.parse('$baseUrl/users/profile');
-    final res = await _client.put(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode(profile.toJson()),
+  Future<Map<String, dynamic>> fetchProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    if (token == null) throw Exception('Not authenticated');
+    final response = await http.get(
+      Uri.parse('$baseUrl/profile'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
     );
-    if (res.statusCode != 200) {
-      throw Exception('Failed to update profile');
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body) as Map<String, dynamic>;
+    } else {
+      throw Exception(_errorFromResponse(response));
     }
   }
 
-  Future<void> requestFriend(String email) async {
-    final uri = Uri.parse('$baseUrl/users/friends/request');
-    final res = await _client.post(
-      uri,
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({'email': email}),
-    );
-    if (res.statusCode != 200) {
-      throw Exception('Failed to send friend request');
-    }
-  }
-
-  Future<List<Friend>> getFriends() async {
-    final uri = Uri.parse('$baseUrl/users/friends');
-    final res = await _client.get(uri);
-    if (res.statusCode != 200) {
-      throw Exception('Failed to load friends');
-    }
-    final list = json.decode(res.body) as List;
-    return list.map((e) => Friend.fromJson(e)).toList();
-  }
-
-  Future<List<Achievement>> getAchievements() async {
-    final uri = Uri.parse('$baseUrl/users/achievements');
-    final res = await _client.get(uri);
-    if (res.statusCode != 200) {
-      throw Exception('Failed to load achievements');
-    }
-    final list = json.decode(res.body) as List;
-    return list.map((e) => Achievement.fromJson(e)).toList();
+  static String _errorFromResponse(http.Response resp) {
+    try {
+      final data = jsonDecode(resp.body);
+      if (data is Map && data.containsKey('error')) {
+        return data['error'].toString();
+      }
+    } catch (_) {}
+    return 'Unknown error: ${resp.body}';
   }
 }

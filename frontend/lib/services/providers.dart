@@ -1,25 +1,55 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'user_api.dart';
-import '../models/user_profile.dart';
-import '../models/friend.dart';
-import '../models/achievement.dart';
+// providers.dart
+import 'package:flutter/material.dart';
 import 'auth_api.dart';
+import 'user_api.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-final userApiProvider = Provider((_) => UserApi());
+class AuthProvider extends ChangeNotifier {
+  final _authApi = AuthApi();
+  final _userApi = UserApi();
+  String? _token;
+  Map<String, dynamic>? _profile;
 
-final authApiProvider = Provider((_) => AuthApi());
+  bool get isAuthenticated => _token != null;
+  Map<String, dynamic>? get profile => _profile;
 
-// 1. Profile
-final profileProvider = FutureProvider<UserProfile>((ref) {
-  return ref.read(userApiProvider).getProfile();
-});
+  AuthProvider() {
+    _init();
+  }
 
-// 2. Friends
-final friendsProvider = FutureProvider<List<Friend>>((ref) {
-  return ref.read(userApiProvider).getFriends();
-});
+  Future<void> _init() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    if (token != null) {
+      _token = token;
+      try {
+        _profile = await _userApi.fetchProfile();
+      } catch (_) {
+        _token = null;
+        _profile = null;
+      }
+    }
+    notifyListeners();
+  }
 
-// 3. Achievements
-final achievementsProvider = FutureProvider<List<Achievement>>((ref) {
-  return ref.read(userApiProvider).getAchievements();
-});
+  Future<void> login(String email, String password) async {
+    _token = await _authApi.login(email, password);
+    _profile = await _userApi.fetchProfile();
+    notifyListeners();
+  }
+
+  Future<void> register(String name, String email, String password) async {
+    _token = await _authApi.register(name, email, password);
+    _profile = await _userApi.fetchProfile();
+    notifyListeners();
+  }
+
+  Future<void> logout() async {
+    await _authApi.logout();
+    _token = null;
+    _profile = null;
+    notifyListeners();
+  }
+}
+
+

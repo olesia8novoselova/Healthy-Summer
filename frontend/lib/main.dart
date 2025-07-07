@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:device_preview/device_preview.dart';
 import 'screens/profile_screen.dart';
 
 import 'screens/auth_screen.dart';
@@ -36,12 +35,12 @@ final GoRouter _router = GoRouter(
   routes: [
     GoRoute(
       path: '/',
-      builder: (context, state) => const AuthScreen(),
+      builder: (context, state) => AuthScreen(),
     ),
     GoRoute(
       path: '/register',
-      builder: (context, state) => const RegisterScreen(),
+      builder: (context, state) => RegisterScreen(),
     ),
-    GoRoute(path: '/profile', builder: (ctx, st) => const ProfileScreen()),
+    GoRoute(path: '/profile', builder: (ctx, st) => ProfileScreen()),
   ],
 );

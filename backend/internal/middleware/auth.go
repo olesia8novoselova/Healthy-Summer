@@ -1,11 +1,12 @@
 package middleware
 
 import (
-    "net/http"
-    "strings"
+	"log"
+	"net/http"
+	"strings"
 
-    "github.com/gin-gonic/gin"
-    "github.com/timur-harin/sum25-go-flutter-course/backend/pkg/auth"
+	"github.com/gin-gonic/gin"
+	"github.com/timur-harin/sum25-go-flutter-course/backend/pkg/auth"
 )
 
 func Auth() gin.HandlerFunc {
@@ -16,6 +17,9 @@ func Auth() gin.HandlerFunc {
             c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
             return
         }
+        log.Println("Authorization header received:", header)
+        
+
 
         // 2. Expect “Bearer <token>”
         parts := strings.SplitN(header, " ", 2)
@@ -31,6 +35,8 @@ func Auth() gin.HandlerFunc {
             c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
             return
         }
+        
+        log.Println("Token part extracted:", tokenStr)
 
         // 4. Inject userID into context for handlers
         c.Set("userID", claims.UserID)

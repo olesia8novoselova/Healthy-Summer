@@ -1,114 +1,75 @@
-// lib/screens/auth_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../services/auth_provider.dart'; // use your correct import path
 import 'package:go_router/go_router.dart';
-import '../services/providers.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
-  const AuthScreen({super.key});
   @override
   ConsumerState<AuthScreen> createState() => _AuthScreenState();
 }
 
 class _AuthScreenState extends ConsumerState<AuthScreen> {
-  final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
-
-  @override
-  void dispose() {
-    _emailCtrl.dispose();
-    _passCtrl.dispose();
-    super.dispose();
-  }
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+  String? _error;
 
   @override
   Widget build(BuildContext context) {
-    final pink = const Color(0xFFF8BBD0);
+    final authAsync = ref.watch(authProvider);
+
+    authAsync.whenOrNull(
+      data: (authState) {
+        if (authState.token != null) {
+          Future.microtask(() => context.go('/profile'));
+        }
+      },
+    );
 
     return Scaffold(
       backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
-          child: Container(
-            constraints: const BoxConstraints(maxWidth: 500),
-            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: pink.withOpacity(0.2),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
+          padding: EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Login', style: TextStyle(fontSize: 24, color: Colors.pink)),
+              SizedBox(height: 16),
+              TextField(
+                controller: _emailController,
+                decoration: InputDecoration(labelText: 'Email', labelStyle: TextStyle(color: Colors.pink)),
+              ),
+              SizedBox(height: 8),
+              TextField(
+                controller: _passwordController,
+                decoration: InputDecoration(labelText: 'Password', labelStyle: TextStyle(color: Colors.pink)),
+                obscureText: true,
+              ),
+              if (_error != null) ...[
+                SizedBox(height: 8),
+                Text(_error!, style: TextStyle(color: Colors.red)),
               ],
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text('Sign In', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: pink)),
-                const SizedBox(height: 24),
-                TextField(
-                  controller: _emailCtrl,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    labelStyle: TextStyle(color: pink),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: pink),
-                      borderRadius: BorderRadius.circular(8),
+              SizedBox(height: 20),
+              authAsync.isLoading
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.pink),
+                      onPressed: () async {
+                        setState(() => _error = null);
+                        await ref.read(authProvider.notifier).login(
+                              _emailController.text,
+                              _passwordController.text,
+                            );
+                        final err = ref.read(authProvider).error;
+                        if (err != null) setState(() => _error = err.toString());
+                      },
+                      child: Text('Login', style: TextStyle(color: Colors.white)),
                     ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: _passCtrl,
-                  obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    labelStyle: TextStyle(color: pink),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: pink),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: pink,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                    ),
-                    onPressed: () async {
-                      final api = ref.read(authApiProvider);
-                      final ok = await api.login(_emailCtrl.text, _passCtrl.text);
-                      if (ok) {
-                        context.go('/profile');
-                      } else {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Login failed')),
-                        );
-                      }
-                    },
-                    child: const Text('Login'),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: () => context.go('/register'),
-                  child: Text(
-                    "Don't have an account? Register",
-                    style: TextStyle(color: pink, decoration: TextDecoration.underline),
-                  ),
-                ),
-              ],
-            ),
+              TextButton(
+                onPressed: () => context.go('/register'),
+                child: Text('Register', style: TextStyle(color: Colors.pink)),
+              ),
+            ],
           ),
         ),
       ),
