@@ -1,6 +1,5 @@
 // user_api.dart
 import 'dart:convert';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -9,7 +8,7 @@ import '../models/achievement.dart';
 import 'providers.dart';
 
 class UserApi {
-  static const String baseUrl = 'http://localhost:8080/api/v1/users';
+  static const String baseUrl = 'http://localhost:8080/api/users';
 
   Future<Map<String, dynamic>> fetchProfile() async {
     final prefs = await SharedPreferences.getInstance();
@@ -83,7 +82,7 @@ class UserApi {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final resp = await http.get(
-    Uri.parse('$baseUrl/users/achievements'), // <-- NOTE: /users/achievements
+    Uri.parse('$baseUrl/users/achievements'),
     headers: {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',

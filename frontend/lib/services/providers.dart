@@ -1,6 +1,8 @@
 // providers.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sum25_flutter_frontend/models/activity.dart';
+import 'package:sum25_flutter_frontend/services/activity_api.dart';
 import '../models/achievement.dart';
 import '../models/friend.dart';
 import 'auth_api.dart';
@@ -70,6 +72,12 @@ final achievementsProvider = FutureProvider<List<Achievement>>((ref) async {
 final userAchievementsProvider = FutureProvider<List<Achievement>>((ref) async {
   final userApi = ref.read(userApiProvider);
   return userApi.fetchUserAchievements();
+});
+
+final activityApiProvider = Provider((ref) => ActivityApi());
+
+final activitiesProvider = FutureProvider.family<List<Activity>, String?>((ref, type) {
+  return ref.read(activityApiProvider).fetchActivities(type: type);
 });
 
 

@@ -1,0 +1,180 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:sum25_flutter_frontend/services/providers.dart';
+
+class ActivityLogScreen extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activitiesAsync = ref.watch(activitiesProvider(null)); // all types
+
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Activity Log', style: TextStyle(color: Colors.pink)),
+        backgroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.history, color: Colors.pink),
+            onPressed: () => context.push('/history'),
+          ),
+        ],
+      ),
+      backgroundColor: Colors.white,
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.pink,
+        child: Icon(Icons.add, color: Colors.white),
+        onPressed: () => showDialog(
+          context: context,
+          builder: (ctx) => AddActivityDialog(ref: ref),
+        ),
+      ),
+      body: activitiesAsync.when(
+        data: (activities) => activities.isEmpty
+            ? Center(child: Text('No activities yet', style: TextStyle(color: Colors.pink)))
+            : ListView(
+                children: activities
+                    .map((a) => ListTile(
+                          title: Text(
+                            '${a.name.isNotEmpty ? a.name : a.type} (${a.type})', // Show name if exists, else just type
+                            style: TextStyle(color: Colors.pink),
+                          ),
+                          subtitle: Text(
+                            '${a.duration} min, ${a.calories} kcal, ${a.location}, Intensity: ${a.intensity}\n${a.performedAt.toLocal()}'
+                          ),
+                        ))
+                    .toList(),
+              ),
+        loading: () => Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Failed: $e', style: TextStyle(color: Colors.red))),
+      ),
+    );
+  }
+}
+
+class AddActivityDialog extends StatefulWidget {
+  final WidgetRef ref;
+  const AddActivityDialog({required this.ref, super.key});
+
+  @override
+  State<AddActivityDialog> createState() => _AddActivityDialogState();
+}
+
+class _AddActivityDialogState extends State<AddActivityDialog> {
+  final _durationController = TextEditingController();
+  final _intensityController = TextEditingController();
+  final _caloriesController = TextEditingController();
+  final _locationController = TextEditingController();
+  final List<String> activityTypes = [
+    'running', 'swimming', 'cycling', 'yoga'
+  ];
+  String? _selectedType;
+  final _nameController = TextEditingController();
+
+
+  String? _error;
+  bool _loading = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('Add Activity', style: TextStyle(color: Colors.pink)),
+      content: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: 'Activity Name (e.g., "Morning Run")',
+                labelStyle: TextStyle(color: Colors.pink),
+              ),
+            ),
+            DropdownButtonFormField<String>(
+              value: _selectedType,
+              items: activityTypes
+                  .map((type) => DropdownMenuItem(
+                        value: type,
+                        child: Text(type[0].toUpperCase() + type.substring(1)),
+                      ))
+                  .toList(),
+              onChanged: (val) => setState(() => _selectedType = val),
+              decoration: InputDecoration(labelText: 'Activity Type', labelStyle: TextStyle(color: Colors.pink)),
+            ),
+            TextField(
+              controller: _durationController,
+              decoration: InputDecoration(
+                labelText: 'Duration (min)',
+                labelStyle: TextStyle(color: Colors.pink),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _intensityController,
+              decoration: InputDecoration(
+                labelText: 'Intensity (1-10)',
+                labelStyle: TextStyle(color: Colors.pink),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _caloriesController,
+              decoration: InputDecoration(
+                labelText: 'Calories Burned',
+                labelStyle: TextStyle(color: Colors.pink),
+              ),
+              keyboardType: TextInputType.number,
+            ),
+            TextField(
+              controller: _locationController,
+              decoration: InputDecoration(
+                labelText: 'Location',
+                labelStyle: TextStyle(color: Colors.pink),
+              ),
+            ),
+            if (_error != null) ...[
+              SizedBox(height: 8),
+              Text(_error!, style: TextStyle(color: Colors.red)),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _loading ? null : () async {
+            setState(() {
+              _loading = true;
+              _error = null;
+            });
+            try {
+              await widget.ref.read(activityApiProvider).addActivity(
+                type: _selectedType!,
+                name: _nameController.text,
+                duration: int.tryParse(_durationController.text) ?? 0,
+                intensity: _intensityController.text,
+                calories: int.tryParse(_caloriesController.text) ?? 0,
+                location: _locationController.text,
+              );
+              Navigator.pop(context);
+              widget.ref.refresh(activitiesProvider(null));
+            } catch (e) {
+              setState(() {
+                _error = e.toString().replaceFirst('Exception:', '').trim();
+              });
+            } finally {
+              setState(() { _loading = false; });
+            }
+          },
+          child: _loading
+              ? SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
+              : Text('Add', style: TextStyle(color: Colors.pink)),
+        ),
+        TextButton(
+          onPressed: _loading ? null : () => Navigator.pop(context),
+          child: Text('Cancel', style: TextStyle(color: Colors.pink)),
+        ),
+      ],
+    );
+  }
+}
+
+

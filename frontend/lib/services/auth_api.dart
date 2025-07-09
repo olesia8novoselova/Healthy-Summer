@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthApi {
-  static const String baseUrl = 'http://localhost:8080/api/v1/users';
+  static const String baseUrl = 'http://localhost:8080/api/users';
 
   Future<String> login(String email, String password) async {
     final response = await http.post(
