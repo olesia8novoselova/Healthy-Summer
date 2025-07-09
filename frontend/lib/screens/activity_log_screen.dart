@@ -3,6 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sum25_flutter_frontend/services/providers.dart';
 
+const caloriesPerMinute = {
+  'running': 10.0,
+  'swimming': 8.0,
+  'cycling': 7.0,
+  'yoga': 4.0,
+};
+
+double calculateCalories(String? type, int duration) {
+  final perMin = caloriesPerMinute[type ?? ''] ?? 6.0;
+  return perMin * duration;
+}
+
 class ActivityLogScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -70,9 +82,33 @@ class _AddActivityDialogState extends State<AddActivityDialog> {
   String? _selectedType;
   final _nameController = TextEditingController();
 
+  double? _calories;
 
   String? _error;
   bool _loading = false;
+
+  void _updateCalories() {
+    final duration = int.tryParse(_durationController.text) ?? 0;
+    setState(() {
+      _calories = calculateCalories(_selectedType, duration);
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _durationController.addListener(_updateCalories);
+  }
+
+  @override
+  void dispose() {
+    _durationController.dispose();
+    _intensityController.dispose();
+    _caloriesController.dispose();
+    _locationController.dispose();
+    _nameController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +121,7 @@ class _AddActivityDialogState extends State<AddActivityDialog> {
             TextField(
               controller: _nameController,
               decoration: InputDecoration(
-                labelText: 'Activity Name (e.g., "Morning Run")',
+                labelText: 'Activity Name',
                 labelStyle: TextStyle(color: Colors.pink),
               ),
             ),
@@ -97,7 +133,10 @@ class _AddActivityDialogState extends State<AddActivityDialog> {
                         child: Text(type[0].toUpperCase() + type.substring(1)),
                       ))
                   .toList(),
-              onChanged: (val) => setState(() => _selectedType = val),
+               onChanged: (val) {
+                  setState(() => _selectedType = val);
+                  _updateCalories();
+                },
               decoration: InputDecoration(labelText: 'Activity Type', labelStyle: TextStyle(color: Colors.pink)),
             ),
             TextField(
@@ -116,14 +155,9 @@ class _AddActivityDialogState extends State<AddActivityDialog> {
               ),
               keyboardType: TextInputType.number,
             ),
-            TextField(
-              controller: _caloriesController,
-              decoration: InputDecoration(
-                labelText: 'Calories Burned',
-                labelStyle: TextStyle(color: Colors.pink),
-              ),
-              keyboardType: TextInputType.number,
-            ),
+            SizedBox(height: 8),
+            Text('Calories Burned: ${_calories?.toStringAsFixed(0) ?? "-"}',
+                style: TextStyle(color: Colors.pink, fontWeight: FontWeight.bold)),
             TextField(
               controller: _locationController,
               decoration: InputDecoration(
@@ -151,7 +185,7 @@ class _AddActivityDialogState extends State<AddActivityDialog> {
                 name: _nameController.text,
                 duration: int.tryParse(_durationController.text) ?? 0,
                 intensity: _intensityController.text,
-                calories: int.tryParse(_caloriesController.text) ?? 0,
+                calories: _calories?.toInt() ?? 0,
                 location: _locationController.text,
               );
               Navigator.pop(context);

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/providers.dart'; // adjust as needed
-import '../models/activity.dart';
+import '../services/providers.dart';
 
 class ActivityHistoryScreen extends ConsumerStatefulWidget {
   const ActivityHistoryScreen({super.key});

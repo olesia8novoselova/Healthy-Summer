@@ -21,17 +21,21 @@ class AuthNotifier extends AsyncNotifier<AuthState> {
   final _userApi = UserApi();
 
   @override
-  Future<AuthState> build() async {
-    // try load token/profile on startup
-    final token = await _authApi.getStoredToken();
-    if (token == null) return AuthState();
-    try {
-      final profile = await _userApi.fetchProfile();
-      return AuthState(token: token, profile: profile);
-    } catch (_) {
-      return AuthState();
+Future<AuthState> build() async {
+  final token = await _authApi.getStoredToken();
+  if (token == null) return AuthState();
+  try {
+    final profile = await _userApi.fetchProfile();
+    return AuthState(token: token, profile: profile);
+  } catch (e) {
+    // If error is "Invalid token", clear it!
+    if (e.toString().contains('Invalid token')) {
+      await _authApi.logout(); // Removes token from SharedPreferences
     }
+    return AuthState();
   }
+}
+
 
   Future<void> login(String email, String password) async {
     state = const AsyncLoading();

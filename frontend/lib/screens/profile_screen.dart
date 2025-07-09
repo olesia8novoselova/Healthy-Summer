@@ -177,7 +177,17 @@ class ProfileScreen extends ConsumerWidget {
           );
         },
         loading: () => Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e', style: TextStyle(color: Colors.red))),
+        error: (e, _) {
+          if (e.toString().contains('Invalid token')) {
+            Future.microtask(() async {
+              final notifier = ref.read(authProvider.notifier);
+              await notifier.logout();
+              if (context.mounted) context.go('/');
+            });
+            return Center(child: CircularProgressIndicator());
+          }
+          return Center(child: Text('Error: $e', style: TextStyle(color: Colors.red)));
+        },
       ),
     );
   }
