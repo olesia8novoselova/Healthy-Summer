@@ -15,6 +15,8 @@ import (
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/middleware"
 	user "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/user"
+	activity "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/activity"
+
 	"github.com/timur-harin/sum25-go-flutter-course/backend/pkg/db"
 	
 )
@@ -47,28 +49,33 @@ func main() {
 	router.GET("/health", handlers.HealthCheck)
 
 	// API routes
-	api := router.Group("/api/v1")
+	api := router.Group("/api")
 	{
 		api.GET("/ping", handlers.Ping)
-		// Add more routes as needed
+
 		users := api.Group("/users")
 		{
 			users.POST("/register", user.Register)
 			users.POST("/login", user.Login)
 
 			// protected routes
-			
-		    users.Use(middleware.Auth())
-		    
-			
-			{
-				users.GET("/profile", user.GetProfile)
-				users.PUT("/profile", user.UpdateProfile)
-				users.POST("/friends/request", user.RequestFriend)
-				users.GET("/friends", user.ListFriends)
-				users.GET("/achievements", user.ListAllAchievements)
-				users.GET("users/achievements", user.ListUserAchievements)
-			}
+			users.Use(middleware.Auth())
+			users.GET("/profile", user.GetProfile)
+			users.PUT("/profile", user.UpdateProfile)
+			users.POST("/friends/request", user.RequestFriend)
+			users.GET("/friends", user.ListFriends)
+			users.GET("/achievements", user.ListAllAchievements)
+			users.GET("users/achievements", user.ListUserAchievements)
+		}
+		
+		activities := api.Group("/activities")
+		{
+			activities.Use(middleware.Auth())
+			activities.POST("", activity.AddActivity)
+			activities.GET("", activity.ListActivities)
+			//activities.GET("/stats", activity.Stats)           
+			//activities.POST("/steps", activity.LogSteps)        
+			//activities.GET("/analytics", activity.Analytics)    
 		}
 	}
 

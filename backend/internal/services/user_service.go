@@ -222,4 +222,25 @@ func (u *userService) AwardAchievementToUserByTitle(email, title string) error {
     return err
 }
 
+func (s *userService) AddActivity(userID, activityType string, name string, duration int, intensity string, calories int, location string) error {
+    _, err := db.DB.Exec(`
+        INSERT INTO activities (user_id, type, name, duration, intensity, calories, location)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+    `, userID, activityType, name, duration, intensity, calories, location)
+    return err
+}
+
+func (s *userService) ListActivities(userID string, filterType *string) ([]models.Activity, error) {
+    var activities []models.Activity
+    query := `SELECT * FROM activities WHERE user_id = $1`
+    args := []interface{}{userID}
+    if filterType != nil {
+        query += ` AND type = $2`
+        args = append(args, *filterType)
+    }
+    query += ` ORDER BY performed_at DESC`
+    err := db.DB.Select(&activities, query, args...)
+    return activities, err
+}
+
 

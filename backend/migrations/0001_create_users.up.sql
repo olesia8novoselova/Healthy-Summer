@@ -36,3 +36,16 @@ CREATE TABLE IF NOT EXISTS friends (
   created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TYPE activity_type AS ENUM ('running', 'swimming', 'cycling', 'yoga');
+
+CREATE TABLE activities (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id UUID NOT NULL,
+  type activity_type NOT NULL,
+  name TEXT NOT NULL,       -- custom name from user
+  duration INT,
+  intensity TEXT,
+  calories INT,
+  location TEXT,
+  performed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
