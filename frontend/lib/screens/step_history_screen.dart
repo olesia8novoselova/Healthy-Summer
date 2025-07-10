@@ -13,6 +13,8 @@ class _StepHistoryScreenState extends ConsumerState<StepHistoryScreen> {
   @override
   Widget build(BuildContext context) {
     final historyAsync = ref.watch(stepHistoryProvider(selectedDays));
+    final statsAsync = ref.watch(stepStatsProvider);
+
 
     return Scaffold(
       appBar: AppBar(
@@ -22,6 +24,37 @@ class _StepHistoryScreenState extends ConsumerState<StepHistoryScreen> {
       backgroundColor: Colors.white,
       body: Column(
         children: [
+          statsAsync.when(
+            data: (stats) => Padding(
+              padding: const EdgeInsets.only(top: 8.0, left: 16, right: 16, bottom: 8),
+              child: Column(
+                children: [
+                  Text('Today: ${stats['today']} / ${stats['goal']} steps',
+                      style: TextStyle(fontSize: 18, color: Colors.pink)),
+                  SizedBox(height: 6),
+                  LinearProgressIndicator(
+                    value: stats['goal'] > 0 ? (stats['today'] / stats['goal']).clamp(0, 1).toDouble() : 0,
+                    minHeight: 7,
+                    color: Colors.pink,
+                    backgroundColor: Colors.pink[50],
+                  ),
+                  SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('Weekly: ${stats['weekly_total']}', style: TextStyle(color: Colors.pink)),
+                      Text('Monthly: ${stats['monthly_total']}', style: TextStyle(color: Colors.pink)),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            loading: () => Padding(
+              padding: EdgeInsets.all(16),
+              child: LinearProgressIndicator(),
+            ),
+            error: (e, _) => Container(), // or show error
+          ),
           DropdownButton<int>(
             value: selectedDays,
             items: [7, 30, 90]

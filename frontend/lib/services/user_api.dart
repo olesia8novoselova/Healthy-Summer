@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/friend.dart';
 import '../models/achievement.dart';
-import 'providers.dart';
 
 class UserApi {
   static const String baseUrl = 'http://localhost:8080/api/users';
