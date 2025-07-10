@@ -58,3 +58,18 @@ CREATE TABLE IF NOT EXISTS user_steps (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   UNIQUE(user_id, day)
 );
+
+CREATE TABLE meals (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid REFERENCES users(id),
+  fdc_id integer,
+  description text,
+  calories double precision,
+  protein double precision,
+  fat double precision,
+  carbs double precision,
+  quantity double precision,
+  unit text,
+  created_at timestamptz DEFAULT NOW()
+);
+

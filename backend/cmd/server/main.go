@@ -8,17 +8,19 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
+
 	"github.com/joho/godotenv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/config"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers"
-	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/middleware"
-	user "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/user"
 	activity "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/activity"
+	nutrition "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/nutrition"
+	
+	user "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/user"
+	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/middleware"
 
 	"github.com/timur-harin/sum25-go-flutter-course/backend/pkg/db"
-	
 )
 
 func main() {
@@ -76,6 +78,15 @@ func main() {
 			activities.POST("/steps", activity.AddSteps)
 			activities.GET("/stats", activity.GetStepStats)
 			activities.GET("/analytics", activity.GetStepAnalytics)
+		}
+
+		nutritionGroup := api.Group("/nutrition")
+		{
+			nutritionGroup.Use(middleware.Auth())
+			nutritionGroup.GET("/foods/search", handlers.SearchUSDAFoods)
+			nutritionGroup.POST("/meals", nutrition.AddMeal)
+			nutritionGroup.GET("/meals", nutrition.ListMeals)
+			nutritionGroup.GET("/stats", nutrition.GetNutritionStats)
 		}
 	}
 
