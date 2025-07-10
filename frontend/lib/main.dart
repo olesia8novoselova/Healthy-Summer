@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:sum25_flutter_frontend/screens/activity_history_screen.dart';
-import 'package:sum25_flutter_frontend/screens/activity_log_screen.dart';
-import 'screens/profile_screen.dart';
-import 'screens/all_achievements_screen.dart';
-import 'screens/auth_screen.dart';
-import 'screens/register_screen.dart';
+import 'package:sum25_flutter_frontend/screens/activity/activity_history_screen.dart';
+import 'package:sum25_flutter_frontend/screens/activity/activity_log_screen.dart';
+import 'package:sum25_flutter_frontend/screens/nutrition/nutrition_screen.dart';
+import 'screens/user/profile_screen.dart';
+import 'screens/user/all_achievements_screen.dart';
+import 'screens/user/auth_screen.dart';
+import 'screens/user/register_screen.dart';
 import 'screens/main_shell.dart';
-import 'screens/step_dashboard_screen.dart';
-import 'screens/step_history_screen.dart';
+import 'screens/activity/step_dashboard_screen.dart';
+import 'screens/activity/step_history_screen.dart';
 
 
 void main() {
@@ -50,21 +51,28 @@ final GoRouter _router = GoRouter(
         // Detect current tab index based on route
         final location = state.fullPath;
         int idx = 0;
-        if (location!.startsWith('/steps')) idx = 0;
-        else if (location.startsWith('/activities')) idx = 1;
-        else if (location.startsWith('/profile')) idx = 2;
+        if (location!.startsWith('/nutrition')) idx = 0;
+        else if (location.startsWith('/steps')) idx = 1;
+        else if (location.startsWith('/activities')) idx = 2;
+        else if (location.startsWith('/profile')) idx = 3;
+        else {
+          return Text('Unknown route');
+        }
         return MainShell(
           child: child,
           currentIndex: idx,
           onTabTapped: (i) {
             switch (i) {
               case 0:
-                context.go('/steps');
+                context.go('/nutrition');
                 break;
               case 1:
-                context.go('/activities');
+                context.go('/steps');
                 break;
               case 2:
+                context.go('/activities');
+                break;
+              case 3:
                 context.go('/profile');
                 break;
             }
@@ -72,6 +80,10 @@ final GoRouter _router = GoRouter(
         );
       },
       routes: [
+        GoRoute(
+          path: '/nutrition',
+          builder: (context, state) => NutritionScreen(),
+        ),
         GoRoute(
           path: '/steps',
           builder: (context, state) => StepDashboardScreen(),

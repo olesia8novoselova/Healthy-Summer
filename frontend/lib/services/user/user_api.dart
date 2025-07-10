@@ -3,8 +3,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../models/friend.dart';
-import '../models/achievement.dart';
+import '../../models/friend.dart';
+import '../../models/achievement.dart';
 
 class UserApi {
   static const String baseUrl = 'http://localhost:8080/api/users';

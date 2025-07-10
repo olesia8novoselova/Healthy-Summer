@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../services/auth_provider.dart'; // use your correct import path
+import '../../services/user/auth_provider.dart'; // use your correct import path
 import 'package:go_router/go_router.dart';
 
 class AuthScreen extends ConsumerStatefulWidget {
