@@ -22,7 +22,11 @@ class MainShell extends StatelessWidget {
         unselectedItemColor: Colors.grey,
         onTap: onTabTapped,
         items: const [
-           BottomNavigationBarItem(
+          BottomNavigationBarItem(
+            icon: Icon(Icons.directions_walk),
+            label: 'Steps',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.fitness_center),
             label: 'Trainings',
           ),

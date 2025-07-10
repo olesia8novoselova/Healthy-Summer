@@ -8,6 +8,8 @@ import 'screens/all_achievements_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/register_screen.dart';
 import 'screens/main_shell.dart';
+import 'screens/step_dashboard_screen.dart';
+import 'screens/step_history_screen.dart';
 
 
 void main() {
@@ -48,23 +50,32 @@ final GoRouter _router = GoRouter(
         // Detect current tab index based on route
         final location = state.fullPath;
         int idx = 0;
-        if (location!.startsWith('/profile')) idx = 1;
+        if (location!.startsWith('/steps')) idx = 0;
+        else if (location.startsWith('/activities')) idx = 1;
+        else if (location.startsWith('/profile')) idx = 2;
         return MainShell(
           child: child,
           currentIndex: idx,
           onTabTapped: (i) {
             switch (i) {
               case 0:
-                context.go('/activities');
+                context.go('/steps');
                 break;
               case 1:
-                context.go('/profile'); // or '/trainings' if you prefer
+                context.go('/activities');
+                break;
+              case 2:
+                context.go('/profile');
                 break;
             }
           },
         );
       },
       routes: [
+        GoRoute(
+          path: '/steps',
+          builder: (context, state) => StepDashboardScreen(),
+        ),
         GoRoute(
           path: '/activities',
           builder: (context, state) => ActivityLogScreen(),
@@ -92,6 +103,13 @@ final GoRouter _router = GoRouter(
       path: '/history',
       builder: (context, state) => const ActivityHistoryScreen(),
     ),
-
+    GoRoute(
+      path: '/steps',
+      builder: (context, state) => StepDashboardScreen(),
+    ),
+    GoRoute(
+      path: '/steps/history',
+      builder: (context, state) => StepHistoryScreen(),
+    ),
   ],
 );

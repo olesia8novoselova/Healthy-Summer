@@ -8,6 +8,7 @@ import '../models/friend.dart';
 import 'auth_api.dart';
 import 'user_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'step_api.dart';
 
 class AuthProvider extends ChangeNotifier {
   final _authApi = AuthApi();
@@ -79,5 +80,14 @@ final activityApiProvider = Provider((ref) => ActivityApi());
 final activitiesProvider = FutureProvider.family<List<Activity>, String?>((ref, type) {
   return ref.read(activityApiProvider).fetchActivities(type: type);
 });
+
+final stepApiProvider = Provider((ref) => StepApi());
+
+final stepStatsProvider = FutureProvider((ref) =>
+    ref.watch(stepApiProvider).fetchStepStats());
+
+final stepHistoryProvider = FutureProvider.family((ref, int days) =>
+    ref.watch(stepApiProvider).fetchStepHistory(days: days));
+
 
 
