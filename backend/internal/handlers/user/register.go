@@ -23,16 +23,15 @@ func Register(c *gin.Context) {
     }
 
     // Create the user
-    if err := services.User.CreateUser(req.Name, req.Email, req.Password); err != nil {
+    userID, err := services.User.CreateUser(req.Name, req.Email, req.Password)
+    if err != nil {
         log.Printf("CreateUser error: %v", err)
         c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
         return
     }
 
-    // Award "Welcome!" achievement (use the actual UUID from your DB!)
-    if err := services.User.AwardAchievementToUserByTitle(req.Email, "Welcome!"); err != nil {
+    if err := services.User.AwardAchievementToUserID(userID, "Welcome!"); err != nil {
         log.Printf("Failed to award Welcome achievement: %v", err)
-        // This can be non-fatal, don't return
     }
     log.Printf("Awarded 'Welcome!' achievement to user %s", req.Email)
 

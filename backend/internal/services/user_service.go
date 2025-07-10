@@ -56,10 +56,10 @@ type userService struct {
 var User = &userService{}
 
 // CreateUser inserts a new user (with hashed password) into the DB.
-func (u *userService) CreateUser(name, email, pass string) error {
+func (u *userService) CreateUser(name, email, pass string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(pass), bcrypt.DefaultCost)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	// model.User has db tags matching your users table.
@@ -74,7 +74,7 @@ func (u *userService) CreateUser(name, email, pass string) error {
 		INSERT INTO users (id, name, email, password_hash, avatar_url)
 		VALUES (:id, :name, :email, :password_hash, :avatar_url)
 	`, &newUser)
-	return err
+	return newUser.ID, err
 }
 
 // Authenticate verifies credentials and returns a JWT on success.
@@ -167,9 +167,6 @@ func (u *userService) ListFriends(userID string) ([]Friend, error) {
 	return friends, err
 }
 
-// AwardNextAchievement finds the next locked achievement and awards it.
-
-
 // List only unlocked achievements for the user
 func (u *userService) ListUnlockedAchievements(userID string) ([]Achievement, error) {
     var achievements []Achievement
@@ -192,28 +189,20 @@ func (u *userService) ListAllAchievements() ([]Achievement, error) {
     return achievements, err
 }
 
-func (u *userService) AwardAchievementToUserByTitle(email, title string) error {
-    var userID string
-    err := db.DB.Get(&userID, `SELECT id FROM users WHERE email = $1`, email)
-    if err != nil {
-        return err
-    }
-
+func (u *userService) AwardAchievementToUserID(userID, title string) error {
     var achID string
-    err = db.DB.Get(&achID, `SELECT id FROM achievements WHERE title = $1`, title)
+    err := db.DB.Get(&achID, `SELECT id FROM achievements WHERE title = $1`, title)
     if err != nil {
         return err
     }
-
     // Check if already awarded to avoid duplicate
     var exists bool
     err = db.DB.Get(&exists, `SELECT EXISTS (
         SELECT 1 FROM user_achievements WHERE user_id = $1 AND achievement_id = $2
     )`, userID, achID)
     if err == nil && exists {
-        return nil // Already awarded, nothing to do
+        return nil 
     }
-
     // Insert award
     _, err = db.DB.Exec(`
         INSERT INTO user_achievements (user_id, achievement_id)
@@ -221,6 +210,7 @@ func (u *userService) AwardAchievementToUserByTitle(email, title string) error {
     `, userID, achID)
     return err
 }
+
 
 func (s *userService) AddActivity(userID, activityType string, name string, duration int, intensity string, calories int, location string) error {
     _, err := db.DB.Exec(`
@@ -242,5 +232,4 @@ func (s *userService) ListActivities(userID string, filterType *string) ([]model
     err := db.DB.Select(&activities, query, args...)
     return activities, err
 }
-
 

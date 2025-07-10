@@ -73,9 +73,9 @@ func main() {
 			activities.Use(middleware.Auth())
 			activities.POST("", activity.AddActivity)
 			activities.GET("", activity.ListActivities)
-			//activities.GET("/stats", activity.Stats)           
-			//activities.POST("/steps", activity.LogSteps)        
-			//activities.GET("/analytics", activity.Analytics)    
+			activities.POST("/steps", activity.AddSteps)
+			activities.GET("/stats", activity.GetStepStats)
+			activities.GET("/analytics", activity.GetStepAnalytics)
 		}
 	}
 

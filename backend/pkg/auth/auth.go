@@ -1,7 +1,11 @@
 package auth
 
-import "github.com/golang-jwt/jwt/v4"
-import "github.com/timur-harin/sum25-go-flutter-course/backend/internal/config"
+import (
+	"log"
+
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/config"
+)
 
 type Claims struct {
     UserID string `json:"userId"`
@@ -25,6 +29,7 @@ func ParseToken(tokenStr string) (*Claims, error) {
         return nil, err
     }
     if claims, ok := token.Claims.(*Claims); ok && token.Valid {
+        log.Printf("Parsed JWT claims: userId=%v", claims.UserID)
         return claims, nil
     }
     return nil, err

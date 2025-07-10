@@ -1,8 +1,9 @@
 package activity
 
 import (
-	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
+	"github.com/gin-gonic/gin"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/services"
 )
 
@@ -29,6 +30,9 @@ func AddActivity(c *gin.Context) {
 
 func ListActivities(c *gin.Context) {
     userID := c.GetString("userID")
+
+    log.Printf("Listing activities for user: %s", userID)
+
     filterType := c.Query("type")
     var filter *string
     if filterType != "" {
