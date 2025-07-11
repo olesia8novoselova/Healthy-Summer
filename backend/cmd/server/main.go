@@ -87,6 +87,14 @@ func main() {
 			nutritionGroup.POST("/meals", nutrition.AddMeal)
 			nutritionGroup.GET("/meals", nutrition.ListMeals)
 			nutritionGroup.GET("/stats", nutrition.GetNutritionStats)
+			nutritionGroup.GET("/stats/weekly", nutrition.GetWeeklyNutritionStats)
+			nutritionGroup.POST("/water", nutrition.AddWaterLog)
+			nutritionGroup.GET("/water/today", nutrition.GetTodayWaterStats)
+			nutritionGroup.GET("/water/weekly", nutrition.GetWeeklyWaterStats)
+			nutritionGroup.POST("/water/goal", nutrition.SetWaterGoal)
+			nutritionGroup.GET("/water/goal", nutrition.GetWaterGoal)
+			nutritionGroup.POST("/calories/goal", nutrition.SetCalorieGoal)
+			nutritionGroup.GET("/calories/goal", nutrition.GetCalorieGoal)
 		}
 	}
 

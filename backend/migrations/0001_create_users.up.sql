@@ -73,3 +73,23 @@ CREATE TABLE meals (
   created_at timestamptz DEFAULT NOW()
 );
 
+CREATE TABLE water_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  amount_ml INT NOT NULL,
+  created_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE water_goals (
+  user_id UUID PRIMARY KEY,
+  goal_ml INT NOT NULL DEFAULT 2000,
+  updated_at TIMESTAMP DEFAULT now()
+);
+
+CREATE TABLE calorie_goals (
+  user_id UUID PRIMARY KEY,
+  goal INT NOT NULL DEFAULT 2000,
+  updated_at TIMESTAMP DEFAULT now()
+);
+
+
