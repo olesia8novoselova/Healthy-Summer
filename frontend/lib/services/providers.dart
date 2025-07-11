@@ -151,4 +151,136 @@ final nutritionStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async 
 
 final mealApiProvider = Provider((ref) => NutritionApi());
 
+final weeklyNutritionStatsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+
+  final resp = await http.get(
+    Uri.parse('http://localhost:8080/api/nutrition/stats/weekly'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
+
+  print('Weekly nutrition raw body: ${resp.body}');
+
+  if (resp.statusCode == 200) {
+    final body = jsonDecode(resp.body);
+    if (body is List) {
+      return List<Map<String, dynamic>>.from(body);
+    } else {
+      return []; 
+    }
+  }
+
+  throw Exception('Failed to fetch weekly nutrition');
+});
+
+
+final todayWaterProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final resp = await http.get(
+    Uri.parse('http://localhost:8080/api/nutrition/water/today'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
+  if (resp.statusCode == 200) return jsonDecode(resp.body);
+  throw Exception('Failed to fetch water stats');
+});
+
+final weeklyWaterProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final resp = await http.get(
+    Uri.parse('http://localhost:8080/api/nutrition/water/weekly'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
+
+  if (resp.statusCode == 200) {
+    final decoded = jsonDecode(resp.body);
+    
+    if (decoded == null) return [];
+    if (decoded is List) {
+      return List<Map<String, dynamic>>.from(decoded);
+    }
+
+    throw Exception('Expected a list but got ${decoded.runtimeType}');
+  }
+
+  throw Exception('Failed to fetch weekly water');
+});
+
+// Set water goal
+final setWaterGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+
+  final response = await http.post(
+    Uri.parse('http://localhost:8080/api/nutrition/water/goal'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({'goal_ml': goal}),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to set water goal');
+  }
+});
+
+final waterGoalProvider = FutureProvider<int>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+
+  final response = await http.get(
+    Uri.parse('http://localhost:8080/api/nutrition/water/goal'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['goal_ml'];
+  } else {
+    throw Exception('Failed to get water goal');
+  }
+});
+
+
+final setCalorieGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+
+  final response = await http.post(
+    Uri.parse('http://localhost:8080/api/nutrition/calories/goal'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({'goal': goal}),
+  );
+
+  if (response.statusCode != 200) {
+    throw Exception('Failed to set calorie goal');
+  }
+});
+
+final calorieGoalProvider = FutureProvider<int>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+
+  final response = await http.get(
+    Uri.parse('http://localhost:8080/api/nutrition/calories/goal'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['goal'];
+  } else {
+    throw Exception('Failed to get calorie goal');
+  }
+});
+
+
+
+
 

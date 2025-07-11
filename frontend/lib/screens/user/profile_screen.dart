@@ -131,7 +131,6 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 SizedBox(height: 24),
 
-                // Achievements: always show "Add Achievement" button, even if GET endpoint doesn't work
                 Text('Achievements', style: TextStyle(fontSize: 18, color: Colors.pink, fontWeight: FontWeight.bold)),
                 userAchievementsAsync.when(
                   data: (achievements) {
