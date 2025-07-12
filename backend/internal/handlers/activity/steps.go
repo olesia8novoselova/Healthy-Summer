@@ -56,3 +56,30 @@ func GetStepAnalytics(c *gin.Context) {
     }
     c.JSON(200, result)
 }
+
+func SetStepGoal(c *gin.Context) {
+	userID := c.MustGet("userID").(string)
+	var input struct {
+		Goal int `json:"goal"`
+	}
+	if err := c.BindJSON(&input); err != nil {
+		c.JSON(400, gin.H{"error": "Invalid body"})
+		return
+	}
+	err := services.Step.SetStepGoal(userID, input.Goal)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to set goal"})
+		return
+	}
+	c.JSON(200, gin.H{"success": true})
+}
+
+func GetStepGoal(c *gin.Context) {
+	userID := c.MustGet("userID").(string)
+	goal, err := services.Step.GetStepGoal(userID)
+	if err != nil {
+		c.JSON(500, gin.H{"error": "Failed to get goal"})
+		return
+	}
+	c.JSON(200, gin.H{"goal": goal})
+}

@@ -45,3 +45,30 @@ func ListActivities(c *gin.Context) {
     }
     c.JSON(http.StatusOK, activities)
 }
+
+func SetActivityGoal(c *gin.Context) {
+  userID := c.MustGet("userID").(string)
+  var input struct {
+    Goal int `json:"goal"`
+  }
+  if err := c.BindJSON(&input); err != nil {
+    c.JSON(400, gin.H{"error": "Invalid body"})
+    return
+  }
+  err := services.User.SetActivityGoal(userID, input.Goal)
+  if err != nil {
+    c.JSON(500, gin.H{"error": "Failed to set goal"})
+    return
+  }
+  c.JSON(200, gin.H{"success": true})
+}
+
+func GetActivityGoal(c *gin.Context) {
+  userID := c.MustGet("userID").(string)
+  goal, err := services.User.GetActivityGoal(userID)
+  if err != nil {
+    c.JSON(500, gin.H{"error": "Failed to get goal"})
+    return
+  }
+  c.JSON(200, gin.H{"goal": goal})
+}

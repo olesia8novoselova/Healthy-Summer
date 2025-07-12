@@ -78,6 +78,10 @@ func main() {
 			activities.POST("/steps", activity.AddSteps)
 			activities.GET("/stats", activity.GetStepStats)
 			activities.GET("/analytics", activity.GetStepAnalytics)
+			activities.POST("/steps/goal", activity.SetStepGoal)
+			activities.GET("/steps/goal", activity.GetStepGoal)
+			activities.POST("/goal", activity.SetActivityGoal)
+			activities.GET("/goal", activity.GetActivityGoal)
 		}
 
 		nutritionGroup := api.Group("/nutrition")

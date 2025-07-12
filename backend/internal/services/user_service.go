@@ -211,7 +211,6 @@ func (u *userService) AwardAchievementToUserID(userID, title string) error {
     return err
 }
 
-
 func (s *userService) AddActivity(userID, activityType string, name string, duration int, intensity string, calories int, location string) error {
     _, err := db.DB.Exec(`
         INSERT INTO activities (user_id, type, name, duration, intensity, calories, location)
@@ -233,3 +232,20 @@ func (s *userService) ListActivities(userID string, filterType *string) ([]model
     return activities, err
 }
 
+func (s *userService) SetActivityGoal(userID string, goal int) error {
+  _, err := db.DB.Exec(`
+    INSERT INTO activity_goals (user_id, goal)
+    VALUES ($1, $2)
+    ON CONFLICT (user_id) DO UPDATE SET goal = EXCLUDED.goal, updated_at = now()
+  `, userID, goal)
+  return err
+}
+
+func (s *userService) GetActivityGoal(userID string) (int, error) {
+  var goal int
+  err := db.DB.Get(&goal, `SELECT goal FROM activity_goals WHERE user_id = $1`, userID)
+  if err != nil {
+    return 500, nil
+  }
+  return goal, nil
+}

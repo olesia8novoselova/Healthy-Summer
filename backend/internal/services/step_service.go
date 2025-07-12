@@ -100,3 +100,21 @@ func (s *stepService) AwardStepAchievements(userID string) error {
     }
     return nil
 }
+
+func (s *stepService) SetStepGoal(userID string, goal int) error {
+	_, err := db.DB.Exec(`
+		INSERT INTO step_goals (user_id, goal)
+		VALUES ($1, $2)
+		ON CONFLICT (user_id) DO UPDATE SET goal = EXCLUDED.goal, updated_at = now()
+	`, userID, goal)
+	return err
+}
+
+func (s *stepService) GetStepGoal(userID string) (int, error) {
+	var goal int
+	err := db.DB.Get(&goal, `SELECT goal FROM step_goals WHERE user_id = $1`, userID)
+	if err != nil {
+		return 10000, nil
+	}
+	return goal, nil
+}

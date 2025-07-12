@@ -92,4 +92,14 @@ CREATE TABLE calorie_goals (
   updated_at TIMESTAMP DEFAULT now()
 );
 
+CREATE TABLE step_goals (
+  user_id UUID PRIMARY KEY,
+  goal INT NOT NULL DEFAULT 10000,
+  updated_at TIMESTAMP DEFAULT now()
+);
 
+CREATE TABLE activity_goals (
+  user_id UUID PRIMARY KEY,
+  goal INT NOT NULL DEFAULT 500,
+  updated_at TIMESTAMP DEFAULT now()
+);
