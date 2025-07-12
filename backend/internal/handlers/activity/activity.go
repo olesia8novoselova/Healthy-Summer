@@ -3,9 +3,16 @@ package activity
 import (
 	"log"
 	"net/http"
+
 	"github.com/gin-gonic/gin"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/services"
 )
+
+type ActivityStats struct {
+	Date     string  `json:"date"`
+	Calories float64 `json:"calories"`
+	Duration float64 `json:"duration"`
+}
 
 func AddActivity(c *gin.Context) {
     userID := c.GetString("userID")
@@ -71,4 +78,25 @@ func GetActivityGoal(c *gin.Context) {
     return
   }
   c.JSON(200, gin.H{"goal": goal})
+}
+
+func GetTodayActivityCalories(c *gin.Context) {
+  userID := c.MustGet("userID").(string)
+
+  total, err := services.User.GetTodayCalories(userID)
+  if err != nil {
+    c.JSON(500, gin.H{"error": "Failed to fetch calories"})
+    return
+  }
+
+  c.JSON(200, gin.H{"calories": total})
+}
+func GetWeeklyActivityStats(c *gin.Context) {
+	userID := c.MustGet("userID").(string)
+	stats, err := services.User.GetWeeklyStats(userID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get weekly activity stats"})
+		return
+	}
+	c.JSON(http.StatusOK, stats)
 }

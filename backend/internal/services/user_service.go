@@ -48,6 +48,12 @@ type Achievement struct {
 	Unlocked bool   `json:"unlocked"`
 }
 
+type ActivityStats struct {
+	Date     string  `json:"date"`
+	Calories float64 `json:"calories"`
+	Duration float64 `json:"duration"`
+}
+
 // userService holds the DB handle.
 type userService struct {
 }
@@ -248,4 +254,39 @@ func (s *userService) GetActivityGoal(userID string) (int, error) {
     return 500, nil
   }
   return goal, nil
+}
+
+func (s *userService) GetTodayCalories(userID string) (int, error) {
+  var total int
+  err := db.DB.Get(&total, `
+    SELECT COALESCE(SUM(calories), 0)
+    FROM activities
+    WHERE user_id = $1
+      AND DATE(performed_at) = CURRENT_DATE
+  `, userID)
+
+  if err != nil {
+    return 0, err
+  }
+  return total, nil
+}
+
+func (s *userService) GetWeeklyStats(userID string) ([]ActivityStats, error) {
+	var stats []ActivityStats
+	query := `
+		SELECT
+			TO_CHAR(performed_at::date, 'YYYY-MM-DD') AS date,
+			COALESCE(SUM(calories), 0) AS calories,
+			COALESCE(SUM(duration), 0) AS duration
+		FROM activities
+		WHERE user_id = $1
+		  AND performed_at >= NOW() - INTERVAL '6 days'
+		GROUP BY performed_at::date
+		ORDER BY performed_at::date
+	`
+	if err := db.DB.Select(&stats, query, userID); err != nil {
+		log.Printf("Error fetching weekly activity stats for user %s: %v", userID, err)
+		return nil, err
+	}
+	return stats, nil
 }

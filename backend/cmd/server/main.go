@@ -82,6 +82,8 @@ func main() {
 			activities.GET("/steps/goal", activity.GetStepGoal)
 			activities.POST("/goal", activity.SetActivityGoal)
 			activities.GET("/goal", activity.GetActivityGoal)
+			activities.GET("/today-calories", activity.GetTodayActivityCalories)
+			activities.GET("/activity/weekly", activity.GetWeeklyActivityStats)
 		}
 
 		nutritionGroup := api.Group("/nutrition")
