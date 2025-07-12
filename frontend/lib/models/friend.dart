@@ -3,11 +3,29 @@ class Friend {
   final String name;
   final String email;
 
-  Friend({required this.id, required this.name, required this.email});
+  final bool isRequest;
 
-  factory Friend.fromJson(Map<String, dynamic> json) => Friend(
-        id: json['id'],
-        name: json['name'],
-        email: json['email'],
-      );
+  Friend({
+    required this.id,
+    required this.name,
+    required this.email,
+    this.isRequest = false,
+  });
+
+  factory Friend.fromJson(Map<String, dynamic> json) {
+    return Friend(
+      id:    json['id']    as String,
+      name:  json['name']  as String,
+      email: json['email'] as String,
+    );
+  }
+  
+  factory Friend.fromRequestJson(Map<String, dynamic> json) {
+    return Friend(
+      id:       json['id']              as String,
+      name:     json['fromUserName']    as String,
+      email:    json['fromUserEmail']   as String,
+      isRequest: true,
+    );
+  }
 }

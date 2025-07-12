@@ -120,8 +120,6 @@ final foodSearchProvider = FutureProvider.family<List<FoodItem>, String>((ref, q
   }
 });
 
-
-
 final mealsProvider = FutureProvider<List<Meal>>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
@@ -208,7 +206,6 @@ final weeklyWaterProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asy
   throw Exception('Failed to fetch weekly water');
 });
 
-// Set water goal
 final setWaterGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
@@ -339,3 +336,39 @@ final setActivityGoalProvider = FutureProvider.family<void, int>((ref, goal) asy
   if (res.statusCode != 200) throw Exception('Failed to set activity goal');
 });
 
+final todayActivityCaloriesProvider = FutureProvider<int>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final res = await http.get(
+    Uri.parse('http://localhost:8080/api/activities/today-calories'),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
+  );
+  if (res.statusCode != 200) throw Exception('Failed to fetch today\'s calories');
+  final body = jsonDecode(res.body);
+  return body['calories'] ?? 0;
+});
+
+final weeklyActivityStatsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  
+  final res = await http.get(
+    Uri.parse('http://localhost:8080/api/activities/activity/weekly'),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  if (res.statusCode != 200) throw Exception('Failed to fetch weekly stats');
+
+  final decoded = jsonDecode(res.body);
+  if (decoded is List) {
+    return List<Map<String, dynamic>>.from(decoded);
+  }
+  if (decoded is Map && decoded['days'] is List) {
+    return List<Map<String, dynamic>>.from(decoded['days']);
+  }
+  throw Exception('Unexpected payload for weekly activity stats: ${decoded.runtimeType}');
+});

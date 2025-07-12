@@ -19,7 +19,9 @@ double calculateCalories(String? type, int duration) {
 class ActivityLogScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activitiesAsync = ref.watch(activitiesProvider(null)); // all types
+    final activitiesAsync = ref.watch(activitiesProvider(null));
+    final goalAsync = ref.watch(activityGoalProvider);
+    final todayCaloriesAsync = ref.watch(todayActivityCaloriesProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -43,6 +45,37 @@ class ActivityLogScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          goalAsync.when(
+            data: (goal) {
+              return todayCaloriesAsync.when(
+                data: (todayCals) {
+                  final progress = (todayCals / goal).clamp(0.0, 1.0);
+                  return Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: LinearProgressIndicator(
+                          value: progress,
+                          minHeight: 14,
+                          backgroundColor: Colors.pink[100],
+                          color: Colors.pink,
+                        ),
+                      ),
+                      Text(
+                        'Today: $todayCals / $goal kcal',
+                        style: TextStyle(color: Colors.pink),
+                      ),
+                      SizedBox(height: 8),
+                    ],
+                  );
+                },
+                loading: () => CircularProgressIndicator(),
+                error: (e, _) => Text('Error: $e'),
+              );
+            },
+            loading: () => CircularProgressIndicator(),
+            error: (e, _) => Text('Goal Error: $e'),
+          ),
           Expanded(
             child: activitiesAsync.when(
               data: (activities) => activities.isEmpty
@@ -72,7 +105,10 @@ class ActivityLogScreen extends ConsumerWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const ActivityGoalSettingsScreen()),
-              ).then((_) => ref.invalidate(activityGoalProvider));
+              ).then((_) {
+                ref.invalidate(activityGoalProvider);
+                ref.invalidate(todayActivityCaloriesProvider);
+              });
             },
           ),
         ],
@@ -80,6 +116,7 @@ class ActivityLogScreen extends ConsumerWidget {
     );
   }
 }
+
 
 class AddActivityDialog extends StatefulWidget {
   final WidgetRef ref;
@@ -225,7 +262,6 @@ class _AddActivityDialogState extends State<AddActivityDialog> {
           onPressed: _loading ? null : () => Navigator.pop(context),
           child: Text('Cancel', style: TextStyle(color: Colors.pink)),
         ),
-        
       ],
     );
   }

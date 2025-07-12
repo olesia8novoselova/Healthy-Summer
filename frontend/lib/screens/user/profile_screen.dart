@@ -4,6 +4,11 @@ import '../../models/user_profile.dart';
 import '../../services/user/auth_provider.dart';
 import '../../services/providers.dart';
 import 'package:go_router/go_router.dart';
+import 'package:fl_chart/fl_chart.dart';
+
+extension MediaQueryBoldTextOverride on MediaQuery {
+  static bool boldTextOverride(BuildContext context) => MediaQuery.of(context).boldText;
+}
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -14,6 +19,9 @@ class ProfileScreen extends ConsumerWidget {
     final friendsAsync = ref.watch(friendsProvider);
     final userAchievementsAsync = ref.watch(userAchievementsProvider);
 
+    // Today's stats providers
+    final burnAsync = ref.watch(todayActivityCaloriesProvider);
+    final nutritionAsync = ref.watch(nutritionStatsProvider);
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -42,13 +50,14 @@ class ProfileScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Profile info
                 Row(
                   children: [
                     CircleAvatar(
                       backgroundImage: (authState.profile!['avatarUrl'] != null && authState.profile!['avatarUrl'].isNotEmpty)
                           ? NetworkImage(authState.profile!['avatarUrl'])
                           : null,
-                      radius: 30,
+                      radius: 50,
                       backgroundColor: Colors.pink[50],
                       child: (authState.profile!['avatarUrl'] == null || authState.profile!['avatarUrl'].isEmpty)
                           ? Icon(Icons.person, color: Colors.pink, size: 32)
@@ -58,7 +67,7 @@ class ProfileScreen extends ConsumerWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(authState.profile!['name'], style: TextStyle(fontSize: 18, color: Colors.pink)),
+                        Text(authState.profile!['name'], style: TextStyle(fontSize: 21, color: Colors.pink)),
                         Text('Weight: ${authState.profile!['weight']?.toStringAsFixed(1) ?? "--"} kg', style: TextStyle(color: Colors.pink)),
                         Text('Height: ${authState.profile!['height']?.toStringAsFixed(1) ?? "--"} cm', style: TextStyle(color: Colors.pink)),
                       ],
@@ -69,7 +78,7 @@ class ProfileScreen extends ConsumerWidget {
                       onPressed: () => showDialog(
                         context: context,
                         builder: (ctx) => EditProfileDialog(
-                          profile: UserProfile.fromJson(authState.profile!), // INSERT IT HERE
+                          profile: UserProfile.fromJson(authState.profile!),
                           onSave: (name, avatarUrl, weight, height) async {
                             await ref.read(userApiProvider).updateProfile(name, avatarUrl, weight, height);
                             ref.invalidate(authProvider);
@@ -80,8 +89,136 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
                 SizedBox(height: 24),
+                Text(
+                  "Today's Stats",
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Colors.pink,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                SizedBox(height: 16),
 
-                // Friends
+                burnAsync.when(
+                  data: (burned) {
+                    return nutritionAsync.when(
+                      data: (nutrition) {
+                        final intake = (nutrition['calories'] as num?)?.toDouble() ?? 0.0;
+                        final rawGoal = (nutrition['calorieGoal'] as num?)?.toDouble()
+                            ?? (authState.profile?['dailyCalorieGoal'] as num?)?.toDouble()
+                            ?? 1000.0;
+                        final goal = rawGoal > 0 ? rawGoal : 1000.0;
+
+                        final burnedClamped = burned.toDouble().clamp(0, goal);
+                        final intakeClamped = intake.clamp(0, goal);
+
+                        final burnedPct = (burnedClamped / goal * 100).toStringAsFixed(0);
+                        final intakePct = (intakeClamped / goal * 100).toStringAsFixed(0);
+
+                        Widget chartColumn({
+                          required String title,
+                          required double value,
+                          required String pct,
+                          required Color color,
+                        }) {
+                          return Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                // 1) Title ABOVE
+                                Text(
+                                  title,
+                                  style: TextStyle(
+                                    color: Colors.pink,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                SizedBox(height: 40),
+
+                                // 2) Pie chart + % label
+                                SizedBox(
+                                  height: 120,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      PieChart(
+                                        PieChartData(
+                                          startDegreeOffset: -90,
+                                          centerSpaceRadius: 40,
+                                          sections: [
+                                            PieChartSectionData(
+                                              value: value,
+                                              color: color,
+                                              radius: 50,
+                                              title: '',
+                                            ),
+                                            PieChartSectionData(
+                                              value: goal - value,
+                                              color: Colors.grey[200],
+                                              radius: 50,
+                                              title: '',
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      Text(
+                                        '$pct%',
+                                        style: TextStyle(
+                                          color: color,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                SizedBox(height: 40),
+
+                                // 3) Caption BELOW
+                                Text(
+                                  '${value.toInt()} / ${goal.toInt()} kcal',
+                                  style: TextStyle(
+                                    color: Colors.pink.shade200,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+
+                        return Row(
+                          children: [
+                            chartColumn(
+                              title: 'Burned',
+                              value: burnedClamped.toDouble(),
+                              pct: burnedPct,
+                              color: Colors.pink,
+                            ),
+                            SizedBox(width: 16),
+                            chartColumn(
+                              title: 'Intake',
+                              value: intakeClamped.toDouble(),
+                              pct: intakePct,
+                              color: Colors.pinkAccent,
+                            ),
+                          ],
+                        );
+                      },
+                      loading: () => Center(child: CircularProgressIndicator()),
+                      error: (e, _) => Text(
+                        'Error loading intake data',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    );
+                  },
+                  loading: () => Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Text(
+                    'Error loading burned calories',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
+                SizedBox(height: 24),
                 Text('Friends', style: TextStyle(fontSize: 18, color: Colors.pink, fontWeight: FontWeight.bold)),
                 friendsAsync.when(
                   data: (friends) => friends.isEmpty
@@ -101,10 +238,10 @@ class ProfileScreen extends ConsumerWidget {
                       : Column(
                           children: [
                             ...friends.map((f) => ListTile(
-                              title: Text(f.name, style: TextStyle(color: Colors.pink)),
-                              subtitle: Text(f.email, style: TextStyle(color: Colors.black54)),
-                              leading: Icon(Icons.person, color: Colors.pink),
-                            )),
+                                  title: Text(f.name, style: TextStyle(color: Colors.pink)),
+                                  subtitle: Text(f.email, style: TextStyle(color: Colors.black54)),
+                                  leading: Icon(Icons.person, color: Colors.pink),
+                                )),
                             TextButton(
                               onPressed: () => showDialog(
                                 context: context,
@@ -131,6 +268,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 SizedBox(height: 24),
 
+                // Achievements
                 Text('Achievements', style: TextStyle(fontSize: 18, color: Colors.pink, fontWeight: FontWeight.bold)),
                 userAchievementsAsync.when(
                   data: (achievements) {
@@ -154,9 +292,9 @@ class ProfileScreen extends ConsumerWidget {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               ...unlocked.map((a) => ListTile(
-                                title: Text(a.title, style: TextStyle(color: Colors.pink)),
-                                leading: Icon(Icons.emoji_events, color: Colors.pink),
-                              )),
+                                    title: Text(a.title, style: TextStyle(color: Colors.pink)),
+                                    leading: Icon(Icons.emoji_events, color: Colors.pink),
+                                  )),
                               Row(
                                 children: [
                                   TextButton(
