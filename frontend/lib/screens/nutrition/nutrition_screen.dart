@@ -100,22 +100,6 @@ class NutritionScreen extends ConsumerWidget {
                         style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue),
                       ),
-                      const SizedBox(height: 16),
-                      ListTile(
-                        leading: Icon(Icons.flag, color: Colors.pink),
-                        title: Text("Set Goals",
-                            style: TextStyle(color: Colors.black)),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const GoalSettingsScreen()),
-                          ).then((_) {
-                            ref.invalidate(waterGoalProvider);
-                            ref.invalidate(weeklyWaterProvider);
-                          });
-                        },
-                      ),
                     ],
                   );
                 },
@@ -146,6 +130,21 @@ class NutritionScreen extends ConsumerWidget {
               loading: () => Center(child: CircularProgressIndicator()),
               error: (e, _) => Text('Failed: $e'),
             ),
+          ),
+          ListTile(
+            leading: Icon(Icons.flag, color: Colors.pink),
+            title: Text("Set Nutrition Goal", style: TextStyle(color: Colors.black)),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const GoalSettingsScreen()),
+              ).then((_) {
+                ref.invalidate(waterGoalProvider);
+                ref.invalidate(weeklyWaterProvider);
+                ref.invalidate(nutritionStatsProvider);
+              });
+            },
           ),
         ],
       ),

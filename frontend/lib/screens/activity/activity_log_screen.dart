@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:sum25_flutter_frontend/screens/activity/activity_goals_screen.dart';
 import 'package:sum25_flutter_frontend/services/providers.dart';
 
 const caloriesPerMinute = {
@@ -40,24 +41,41 @@ class ActivityLogScreen extends ConsumerWidget {
           builder: (ctx) => AddActivityDialog(ref: ref),
         ),
       ),
-      body: activitiesAsync.when(
-        data: (activities) => activities.isEmpty
-            ? Center(child: Text('No activities yet', style: TextStyle(color: Colors.pink)))
-            : ListView(
-                children: activities
-                    .map((a) => ListTile(
-                          title: Text(
-                            '${a.name.isNotEmpty ? a.name : a.type} (${a.type})', // Show name if exists, else just type
-                            style: TextStyle(color: Colors.pink),
-                          ),
-                          subtitle: Text(
-                            '${a.duration} min, ${a.calories} kcal, ${a.location}, Intensity: ${a.intensity}\n${a.performedAt.toLocal()}'
-                          ),
-                        ))
-                    .toList(),
-              ),
-        loading: () => Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Failed: $e', style: TextStyle(color: Colors.red))),
+      body: Column(
+        children: [
+          Expanded(
+            child: activitiesAsync.when(
+              data: (activities) => activities.isEmpty
+                  ? Center(child: Text('No activities yet', style: TextStyle(color: Colors.pink)))
+                  : ListView(
+                      children: activities
+                          .map((a) => ListTile(
+                                title: Text(
+                                  '${a.name.isNotEmpty ? a.name : a.type} (${a.type})',
+                                  style: TextStyle(color: Colors.pink),
+                                ),
+                                subtitle: Text(
+                                  '${a.duration} min, ${a.calories} kcal, ${a.location}, '
+                                  'Intensity: ${a.intensity}\n${a.performedAt.toLocal()}',
+                                ),
+                              ))
+                          .toList(),
+                    ),
+              loading: () => Center(child: CircularProgressIndicator()),
+              error: (e, _) => Center(child: Text('Failed: $e', style: TextStyle(color: Colors.red))),
+            ),
+          ),
+          ListTile(
+            leading: Icon(Icons.flag, color: Colors.pink),
+            title: Text("Set Activity Goal", style: TextStyle(color: Colors.black)),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ActivityGoalSettingsScreen()),
+              ).then((_) => ref.invalidate(activityGoalProvider));
+            },
+          ),
+        ],
       ),
     );
   }
@@ -111,7 +129,8 @@ class _AddActivityDialogState extends State<AddActivityDialog> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, ) {
+    final ref = widget.ref;
     return AlertDialog(
       title: Text('Add Activity', style: TextStyle(color: Colors.pink)),
       content: SingleChildScrollView(
@@ -206,6 +225,7 @@ class _AddActivityDialogState extends State<AddActivityDialog> {
           onPressed: _loading ? null : () => Navigator.pop(context),
           child: Text('Cancel', style: TextStyle(color: Colors.pink)),
         ),
+        
       ],
     );
   }

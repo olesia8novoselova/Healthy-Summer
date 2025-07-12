@@ -280,7 +280,62 @@ final calorieGoalProvider = FutureProvider<int>((ref) async {
   }
 });
 
+final stepGoalProvider = FutureProvider<int>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final response = await http.get(
+    Uri.parse('http://localhost:8080/api/activities/steps/goal'),
+    headers: {'Authorization': 'Bearer $token'},
+  );
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return data['goal'];
+  } else {
+    throw Exception('Failed to get step goal');
+  }
+});
 
+final setStepGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final response = await http.post(
+    Uri.parse('http://localhost:8080/api/activities/steps/goal'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({'goal': goal}),
+  );
+  if (response.statusCode != 200) {
+    throw Exception('Failed to set step goal');
+  }
+});
 
+final activityGoalProvider = FutureProvider<int>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final res = await http.get(
+    Uri.parse('http://localhost:8080/api/activities/goal'),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
+  );
+  if (res.statusCode != 200) throw Exception('Failed to load activity goal');
+  final body = jsonDecode(res.body);
+  return body['goal'] ?? 500;
+});
 
+final setActivityGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final res = await http.post(
+    Uri.parse('http://localhost:8080/api/activities/goal'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({'goal': goal}),
+  );
+  if (res.statusCode != 200) throw Exception('Failed to set activity goal');
+});
 
