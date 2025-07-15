@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"log"
 	"net/http"
 	"strings"
 
@@ -35,7 +36,7 @@ func Auth() gin.HandlerFunc {
             return
         }
 
-        //log.Println("Token part extracted:", tokenStr)
+        log.Println("Token part extracted:", tokenStr)
 
         // 4. Inject userID into context for handlers
         c.Set("userID", claims.UserID)

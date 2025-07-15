@@ -290,3 +290,58 @@ func (s *userService) GetWeeklyStats(userID string) ([]ActivityStats, error) {
 	}
 	return stats, nil
 }
+
+func (u *userService) AcceptFriendRequest(userID, requestID string) error {
+	// 1. Check request exists and user is recipient
+	var requesterID string
+	err := db.DB.Get(&requesterID, `
+		SELECT requester_id FROM friend_requests
+		WHERE id = $1 AND recipient_id = $2
+	`, requestID, userID)
+	if err != nil {
+		return errors.New("request not found")
+	}
+
+	// 2. Add both friends to the 'friends' table (bi-directional)
+	_, err = db.DB.Exec(`
+		INSERT INTO friends (user_id, friend_id) VALUES ($1, $2), ($2, $1)
+	`, userID, requesterID)
+	if err != nil {
+		return err
+	}
+
+	// 3. Delete the request
+	_, err = db.DB.Exec(`DELETE FROM friend_requests WHERE id = $1`, requestID)
+	return err
+}
+
+func (u *userService) DeclineFriendRequest(userID, requestID string) error {
+	// Just delete the request if user is recipient
+	_, err := db.DB.Exec(`
+		DELETE FROM friend_requests
+		WHERE id = $1 AND recipient_id = $2
+	`, requestID, userID)
+	return err
+}
+
+// Returns friend requests where current user is recipient
+func (u *userService) ListPendingFriendRequests(userID string) ([]Friend, error) {
+	var requests []Friend
+	err := db.DB.Select(&requests, `
+		SELECT fr.id as id, u.name, u.email
+		FROM friend_requests fr
+		JOIN users u ON u.id = fr.requester_id
+		WHERE fr.recipient_id = $1
+	`, userID)
+	return requests, err
+}
+
+func (u *userService) GetFriendIDs(userID string) ([]string, error) {
+	var ids []string
+	err := db.DB.Select(&ids, `
+		SELECT friend_id
+		FROM friends
+		WHERE user_id = $1
+	`, userID)
+	return ids, err
+}

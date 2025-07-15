@@ -103,3 +103,19 @@ CREATE TABLE activity_goals (
   goal INT NOT NULL DEFAULT 500,
   updated_at TIMESTAMP DEFAULT now()
 );
+
+CREATE TABLE post_activities (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL,
+    type TEXT NOT NULL,
+    message TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE messages (
+  id UUID PRIMARY KEY,
+  sender_id UUID NOT NULL REFERENCES users(id),
+  receiver_id UUID NOT NULL REFERENCES users(id),
+  text TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+);

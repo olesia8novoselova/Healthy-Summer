@@ -16,7 +16,7 @@ import (
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers"
 	activity "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/activity"
 	nutrition "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/nutrition"
-	
+	wellness "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/wellness"
 	user "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/user"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/middleware"
 
@@ -65,9 +65,13 @@ func main() {
 			users.GET("/profile", user.GetProfile)
 			users.PUT("/profile", user.UpdateProfile)
 			users.POST("/friends/request", user.RequestFriend)
+			users.GET("/friends/requests", user.ListFriendRequests)
 			users.GET("/friends", user.ListFriends)
 			users.GET("/achievements", user.ListAllAchievements)
 			users.GET("users/achievements", user.ListUserAchievements)
+			users.POST("/friends/requests/:id/accept", user.AcceptFriendRequest)
+			users.POST("/friends/requests/:id/decline", user.DeclineFriendRequest)
+
 		}
 		
 		activities := api.Group("/activities")
@@ -101,6 +105,19 @@ func main() {
 			nutritionGroup.GET("/water/goal", nutrition.GetWaterGoal)
 			nutritionGroup.POST("/calories/goal", nutrition.SetCalorieGoal)
 			nutritionGroup.GET("/calories/goal", nutrition.GetCalorieGoal)
+		}
+
+		wellnessGroup := api.Group("/wellness")
+		{
+			wellnessGroup.GET("/ws", wellness.WebSocketHandler)
+
+			wellnessGroup.Use(middleware.Auth())
+			wellnessGroup.POST("/activities", wellness.PostActivity)
+			wellnessGroup.GET("/activities", wellness.GetFriendsActivities)
+			wellnessGroup.GET("/ws/activity", wellness.ActivitySocket)
+			wellnessGroup.GET("/messages/:friendId", wellness.GetMessages)
+			wellnessGroup.GET("/friends", wellness.GetChatList)
+			wellnessGroup.POST("/messages", wellness.PostMessage)
 		}
 	}
 

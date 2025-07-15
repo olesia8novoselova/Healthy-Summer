@@ -23,13 +23,15 @@ func ParseToken(tokenStr string) (*Claims, error) {
 	cfg := config.Load()
 
     token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(t *jwt.Token) (interface{}, error) {
+        
         return []byte(cfg.JWTSecret), nil
     })
     if err != nil {
         return nil, err
     }
     if claims, ok := token.Claims.(*Claims); ok && token.Valid {
-        log.Printf("Parsed JWT claims: userId=%v", claims.UserID)
+        log.Printf("Parsed JWT claims in ParseToken: userId=%v", claims.UserID)
+        log.Println("JWT Secret in ParseToken:", cfg.JWTSecret)
         return claims, nil
     }
     return nil, err
