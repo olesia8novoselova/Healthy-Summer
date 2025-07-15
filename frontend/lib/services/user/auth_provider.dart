@@ -36,6 +36,11 @@ Future<AuthState> build() async {
   }
 }
 
+String? get jwtToken => state.when(
+        data: (authState) => authState.token,
+        loading: () => null,
+        error: (_, __) => null,
+      );
 
   Future<void> login(String email, String password) async {
     state = const AsyncLoading();

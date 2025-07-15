@@ -22,6 +22,56 @@ class ActivityLogScreen extends ConsumerWidget {
     final activitiesAsync = ref.watch(activitiesProvider(null));
     final goalAsync = ref.watch(activityGoalProvider);
     final todayCaloriesAsync = ref.watch(todayActivityCaloriesProvider);
+    final goalReached = ref.watch(activityGoalReachedProvider);
+    final alreadyNotified = ref.watch(goalNotifiedProvider);
+
+    // 🔔 Show share dialog once when goal is reached
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (goalReached && !alreadyNotified) {
+        ref.read(goalNotifiedProvider.notifier).state = true;
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("🎉 Activity Goal Reached!"),
+            content: Text("You reached your activity goal today! Want to share it with friends?"),
+            actions: [
+              TextButton(
+                child: Text("Not now"),
+                onPressed: () => Navigator.pop(context),
+                
+                style: TextButton.styleFrom(foregroundColor: Colors.pink),
+              ),
+              TextButton(
+                child: Text("Share"),
+                onPressed: () async {
+                  if (context.mounted && Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                  await Future.delayed(const Duration(milliseconds: 200)); 
+                  try {
+                    await ref.read(wellnessApiProvider).postWellnessActivity(
+                      type: "activity_goal",
+                      message: "I just hit my daily activity goal! 💪",
+                    );
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Shared to friends 🎉")),
+                      );
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to share: $e")),
+                    );
+                  }
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.pink),
+              )
+            ],
+          ),
+        );
+      }
+    });
+
 
     return Scaffold(
       appBar: AppBar(

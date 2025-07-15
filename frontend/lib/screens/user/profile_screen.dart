@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/user_profile.dart';
 import '../../services/user/auth_provider.dart';
 import '../../services/providers.dart';
@@ -13,10 +14,52 @@ extension MediaQueryBoldTextOverride on MediaQuery {
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
 
+  Future<void> _checkAndPromptForNewAchievements(BuildContext context, WidgetRef ref, List<dynamic> achievements) async {
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getStringList('shared_achievements') ?? [];
+    final newOnes = achievements
+        .where((a) => a.unlocked && !cached.contains(a.id))
+        .toList();
+
+    for (final achievement in newOnes) {
+      // ignore: use_build_context_synchronously
+      await showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('🎉 Achievement Unlocked!', style: TextStyle(color: Colors.pink)),
+          content: Text("You've unlocked '${achievement.title}'! Share it with your friends?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text("Not now", style: TextStyle(color: Colors.grey)),
+            ),
+            TextButton(
+              onPressed: () async {
+                await ref.read(wellnessApiProvider).postWellnessActivity(
+                  type: "achievement",
+                  message: "Unlocked the '${achievement.title}' badge! 🏅",
+                );
+                // Add to shared list
+                cached.add(achievement.id);
+                await prefs.setStringList('shared_achievements', cached);
+                if (context.mounted) Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Achievement shared 🎉")),
+                );
+              },
+              child: const Text("Share", style: TextStyle(color: Colors.pink)),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final authAsync = ref.watch(authProvider);
     final friendsAsync = ref.watch(friendsProvider);
+    final friendRequestsAsync = ref.watch(friendRequestsProvider);
     final userAchievementsAsync = ref.watch(userAchievementsProvider);
 
     // Today's stats providers
@@ -89,136 +132,7 @@ class ProfileScreen extends ConsumerWidget {
                   ],
                 ),
                 SizedBox(height: 24),
-                Text(
-                  "Today's Stats",
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.pink,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 16),
 
-                burnAsync.when(
-                  data: (burned) {
-                    return nutritionAsync.when(
-                      data: (nutrition) {
-                        final intake = (nutrition['calories'] as num?)?.toDouble() ?? 0.0;
-                        final rawGoal = (nutrition['calorieGoal'] as num?)?.toDouble()
-                            ?? (authState.profile?['dailyCalorieGoal'] as num?)?.toDouble()
-                            ?? 1000.0;
-                        final goal = rawGoal > 0 ? rawGoal : 1000.0;
-
-                        final burnedClamped = burned.toDouble().clamp(0, goal);
-                        final intakeClamped = intake.clamp(0, goal);
-
-                        final burnedPct = (burnedClamped / goal * 100).toStringAsFixed(0);
-                        final intakePct = (intakeClamped / goal * 100).toStringAsFixed(0);
-
-                        Widget chartColumn({
-                          required String title,
-                          required double value,
-                          required String pct,
-                          required Color color,
-                        }) {
-                          return Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                // 1) Title ABOVE
-                                Text(
-                                  title,
-                                  style: TextStyle(
-                                    color: Colors.pink,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                                SizedBox(height: 40),
-
-                                // 2) Pie chart + % label
-                                SizedBox(
-                                  height: 120,
-                                  child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      PieChart(
-                                        PieChartData(
-                                          startDegreeOffset: -90,
-                                          centerSpaceRadius: 40,
-                                          sections: [
-                                            PieChartSectionData(
-                                              value: value,
-                                              color: color,
-                                              radius: 50,
-                                              title: '',
-                                            ),
-                                            PieChartSectionData(
-                                              value: goal - value,
-                                              color: Colors.grey[200],
-                                              radius: 50,
-                                              title: '',
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Text(
-                                        '$pct%',
-                                        style: TextStyle(
-                                          color: color,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                SizedBox(height: 40),
-
-                                // 3) Caption BELOW
-                                Text(
-                                  '${value.toInt()} / ${goal.toInt()} kcal',
-                                  style: TextStyle(
-                                    color: Colors.pink.shade200,
-                                    fontSize: 14,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }
-
-                        return Row(
-                          children: [
-                            chartColumn(
-                              title: 'Burned',
-                              value: burnedClamped.toDouble(),
-                              pct: burnedPct,
-                              color: Colors.pink,
-                            ),
-                            SizedBox(width: 16),
-                            chartColumn(
-                              title: 'Intake',
-                              value: intakeClamped.toDouble(),
-                              pct: intakePct,
-                              color: Colors.pinkAccent,
-                            ),
-                          ],
-                        );
-                      },
-                      loading: () => Center(child: CircularProgressIndicator()),
-                      error: (e, _) => Text(
-                        'Error loading intake data',
-                        style: TextStyle(color: Colors.red),
-                      ),
-                    );
-                  },
-                  loading: () => Center(child: CircularProgressIndicator()),
-                  error: (e, _) => Text(
-                    'Error loading burned calories',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                ),
-                SizedBox(height: 24),
                 Text('Friends', style: TextStyle(fontSize: 18, color: Colors.pink, fontWeight: FontWeight.bold)),
                 friendsAsync.when(
                   data: (friends) => friends.isEmpty
@@ -267,6 +181,66 @@ class ProfileScreen extends ConsumerWidget {
                   ),
                 ),
                 SizedBox(height: 24),
+
+                Text(
+                  'Incoming Friend Requests',
+                  style: TextStyle(fontSize: 14, color: Colors.pink, fontWeight: FontWeight.bold),
+                ),
+                friendRequestsAsync.when(
+                  data: (requests) {
+                    if (requests.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        child: Text('No new requests', style: TextStyle(color: Colors.pink)),
+                      );
+                    }
+                    return Column(
+                      children: requests.map((r) {
+                        return ListTile(
+                          leading: Icon(Icons.person, color: Colors.pink),
+                          title: Text(r.name, style: TextStyle(color: Colors.pink)),
+                          subtitle: Text(r.email),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.check, color: Colors.green),
+                                tooltip: "Accept",
+                                onPressed: () async {
+                                  await ref.read(userApiProvider).acceptFriendRequest(r.id);
+                                  ref.refresh(friendRequestsProvider);
+                                  ref.refresh(friendsProvider);
+                                },
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.close, color: Colors.red),
+                                tooltip: "Decline",
+                                onPressed: () async {
+                                  await ref.read(userApiProvider).declineFriendRequest(r.id);
+                                  ref.refresh(friendRequestsProvider);
+                                },
+                              ),
+                            ],
+                          ),
+                        );
+                      }).toList(),
+                    );
+                  },
+                  loading: () => Center(child: CircularProgressIndicator()),
+                  error: (e, _) => Text('Failed to load requests: $e', style: TextStyle(color: Colors.red)),
+                ),
+                SizedBox(height: 24),
+
+                userAchievementsAsync.when(
+                  data: (achievements) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      _checkAndPromptForNewAchievements(context, ref, achievements);
+                    });
+                    return SizedBox(height: 0); 
+                  },
+                  loading: () => Center(child: CircularProgressIndicator()), 
+                  error: (_, __) => Text('Failed to load achievements'), 
+                ),
 
                 // Achievements
                 Text('Achievements', style: TextStyle(fontSize: 18, color: Colors.pink, fontWeight: FontWeight.bold)),
@@ -365,24 +339,27 @@ class _AddFriendDialogState extends State<AddFriendDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _loading ? null : () async {
-            setState(() {
-              _loading = true;
-              _error = null;
-            });
-            try {
-              // Implement userApi request here
-              await widget.ref.read(userApiProvider).sendFriendRequest(_emailController.text);
-              Navigator.pop(context);
-              widget.ref.refresh(friendsProvider);
-            } catch (e) {
-              setState(() {
-                _error = e.toString().replaceFirst('Exception:', '').trim();
-              });
-            } finally {
-              setState(() { _loading = false; });
-            }
-          },
+          onPressed: _loading
+              ? null
+              : () async {
+                  setState(() {
+                    _loading = true;
+                    _error = null;
+                  });
+                  try {
+                    await widget.ref.read(userApiProvider).sendFriendRequest(_emailController.text);
+                    Navigator.pop(context);
+                    widget.ref.refresh(friendsProvider);
+                  } catch (e) {
+                    setState(() {
+                      _error = e.toString().replaceFirst('Exception:', '').trim();
+                    });
+                  } finally {
+                    setState(() {
+                      _loading = false;
+                    });
+                  }
+                },
           child: _loading
               ? SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
               : Text('Send', style: TextStyle(color: Colors.pink)),

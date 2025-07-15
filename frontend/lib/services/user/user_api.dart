@@ -2,7 +2,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:sum25_flutter_frontend/models/friend_request.dart';
 import '../../models/friend.dart';
 import '../../models/achievement.dart';
 
@@ -132,4 +132,63 @@ class UserApi {
       throw Exception('Failed to update profile');
     }
   }
+
+  Future<List<FriendRequest>> fetchFriendRequests() async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  if (token == null) throw Exception('Not authenticated');
+  
+  final resp = await http.get(
+    Uri.parse('$baseUrl/friends/requests'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  if (resp.statusCode == 200) {
+    final list = jsonDecode(resp.body) as List;
+    return list
+      .cast<Map<String, dynamic>>()
+      .map((json) => FriendRequest.fromJson(json))
+      .toList();
+  } else {
+    throw Exception('Failed to load friend requests: ${resp.body}');
+  }
+}
+
+
+  Future<void> acceptFriendRequest(String requestId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  if (token == null) throw Exception('Not authenticated');
+  final resp = await http.post(
+    Uri.parse('$baseUrl/friends/requests/$requestId/accept'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  print('FriendAcceptRequests HTTP status: ${resp.statusCode}');
+  print('FriendAcceptRequests HTTP body: ${resp.body}');
+
+  if (resp.statusCode != 200) {
+    throw Exception('Failed to accept friend request: ${resp.body}');
+  }
+}
+
+Future<void> declineFriendRequest(String requestId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  if (token == null) throw Exception('Not authenticated');
+  final resp = await http.post(
+    Uri.parse('$baseUrl/friends/requests/$requestId/decline'),
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    },
+  );
+  if (resp.statusCode != 200) {
+    throw Exception('Failed to decline friend request: ${resp.body}');
+  }
+}
 }

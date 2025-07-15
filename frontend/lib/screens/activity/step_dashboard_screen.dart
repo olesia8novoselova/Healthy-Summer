@@ -9,6 +9,52 @@ class StepDashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final statsAsync = ref.watch(stepStatsProvider);
+    final goalReached = ref.watch(stepGoalReachedProvider);
+    final alreadyNotified = ref.watch(stepGoalNotifiedProvider);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (goalReached && !alreadyNotified) {
+        ref.read(stepGoalNotifiedProvider.notifier).state = true;
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text("🎉 Step Goal Reached!"),
+            content: Text("You've reached your step goal today! Want to share it with friends?"),
+            actions: [
+              TextButton(
+                child: Text("Not now"),
+                onPressed: () => Navigator.pop(context),
+                style: TextButton.styleFrom(foregroundColor: Colors.pink),
+              ),
+              TextButton(
+                child: Text("Share"),
+                onPressed: () async {
+                  if (context.mounted && Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  }
+                  await Future.delayed(const Duration(milliseconds: 200)); 
+                  try {
+                    await ref.read(wellnessApiProvider).postWellnessActivity(
+                      type: "steps_goal",
+                      message: "I just hit my step goal for today! 🚶‍♂️🎯",
+                    );
+                    ref.invalidate(friendActivitiesProvider);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Shared with friends! 🎉")),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Failed to share: $e")),
+                    );
+                  }
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.pink),
+              )
+            ],
+          ),
+        );
+      }
+    });
 
     return Scaffold(
       appBar: AppBar(

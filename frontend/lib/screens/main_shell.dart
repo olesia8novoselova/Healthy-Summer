@@ -23,6 +23,10 @@ class MainShell extends StatelessWidget {
         onTap: onTabTapped,
         items: const [
           BottomNavigationBarItem(
+            icon: Icon(Icons.group),
+            label: 'Wellness',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.restaurant_menu),
             label: 'Nutrition',
           ),

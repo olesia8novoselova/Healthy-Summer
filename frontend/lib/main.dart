@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:sum25_flutter_frontend/screens/activity/activity_history_screen.dart';
 import 'package:sum25_flutter_frontend/screens/activity/activity_log_screen.dart';
 import 'package:sum25_flutter_frontend/screens/nutrition/nutrition_screen.dart';
+import 'package:sum25_flutter_frontend/screens/wellness/wellness_screen.dart';
 import 'screens/user/profile_screen.dart';
 import 'screens/user/all_achievements_screen.dart';
 import 'screens/user/auth_screen.dart';
@@ -44,17 +45,16 @@ final GoRouter _router = GoRouter(
   navigatorKey: _rootNavigatorKey,
   initialLocation: '/profile',
   routes: [
-    /// Main area with bottom navigation (footer)
     ShellRoute(
       navigatorKey: _shellNavigatorKey,
       builder: (context, state, child) {
-        // Detect current tab index based on route
         final location = state.fullPath;
         int idx = 0;
-        if (location!.startsWith('/nutrition')) idx = 0;
-        else if (location.startsWith('/steps')) idx = 1;
-        else if (location.startsWith('/activities')) idx = 2;
-        else if (location.startsWith('/profile')) idx = 3;
+        if (location!.startsWith('/wellness')) idx = 0;
+         else if (location.startsWith('/nutrition')) idx = 1;
+        else if (location.startsWith('/steps')) idx = 2;
+        else if (location.startsWith('/activities')) idx = 3;
+        else if (location.startsWith('/profile')) idx = 4;
         else {
           return Text('Unknown route');
         }
@@ -64,15 +64,18 @@ final GoRouter _router = GoRouter(
           onTabTapped: (i) {
             switch (i) {
               case 0:
-                context.go('/nutrition');
+                context.go('/wellness');
                 break;
               case 1:
-                context.go('/steps');
+                context.go('/nutrition');
                 break;
               case 2:
-                context.go('/activities');
+                context.go('/steps');
                 break;
               case 3:
+                context.go('/activities');
+                break;
+              case 4:
                 context.go('/profile');
                 break;
             }
@@ -80,6 +83,10 @@ final GoRouter _router = GoRouter(
         );
       },
       routes: [
+        GoRoute(
+          path: '/wellness',
+          builder: (context, state) => WellnessScreen(),
+        ),
         GoRoute(
           path: '/nutrition',
           builder: (context, state) => NutritionScreen(),
@@ -98,7 +105,6 @@ final GoRouter _router = GoRouter(
         ),
       ],
     ),
-    /// Routes OUTSIDE the shell (no footer)
     GoRoute(
       path: '/',
       builder: (context, state) => AuthScreen(),

@@ -6,9 +6,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:sum25_flutter_frontend/models/activity.dart';
 import 'package:sum25_flutter_frontend/models/food_item.dart';
+import 'package:sum25_flutter_frontend/models/friend_request.dart';
 import 'package:sum25_flutter_frontend/models/meal.dart';
+import 'package:sum25_flutter_frontend/models/message.dart';
+import 'package:sum25_flutter_frontend/models/post_activity.dart';
 import 'package:sum25_flutter_frontend/services/activity/activity_api.dart';
 import 'package:sum25_flutter_frontend/services/nutrition/nutrition_api.dart';
+import 'package:sum25_flutter_frontend/services/wellness/chat_api.dart';
+import 'package:sum25_flutter_frontend/services/wellness/wellness_api.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import '../models/achievement.dart';
 import '../models/friend.dart';
 import 'user/auth_api.dart';
@@ -67,8 +73,11 @@ class AuthProvider extends ChangeNotifier {
 final userApiProvider = Provider((ref) => UserApi());
 
 final friendsProvider = FutureProvider<List<Friend>>((ref) async {
-  final api = ref.read(userApiProvider);
-  return api.fetchFriends();
+  return ref.read(userApiProvider).fetchFriends();
+});
+
+final friendRequestsProvider = FutureProvider<List<FriendRequest>>((ref) async {
+  return ref.read(userApiProvider).fetchFriendRequests();
 });
 
 final achievementsProvider = FutureProvider<List<Achievement>>((ref) async {
@@ -372,3 +381,228 @@ final weeklyActivityStatsProvider = FutureProvider<List<Map<String, dynamic>>>((
   }
   throw Exception('Unexpected payload for weekly activity stats: ${decoded.runtimeType}');
 });
+
+final wellnessApiProvider = Provider((ref) => WellnessApi());
+
+final friendActivitiesProvider = FutureProvider<List<PostActivity>>((ref) async {
+  return ref.read(wellnessApiProvider).fetchFriendActivities();
+});
+
+final goalNotifiedProvider = StateProvider<bool>((ref) => false);
+
+final activityGoalReachedProvider = Provider<bool>((ref) {
+  final goal = ref.watch(activityGoalProvider).asData?.value ?? 0;
+  final calories = ref.watch(todayActivityCaloriesProvider).asData?.value ?? 0;
+  return calories >= goal && goal > 0;
+});
+
+final stepGoalReachedProvider = Provider<bool>((ref) {
+  final goal = ref.watch(stepGoalProvider).asData?.value ?? 0;
+  final stats = ref.watch(stepStatsProvider).asData?.value;
+  final steps = stats?['today'] ?? 0;
+  return steps >= goal && goal > 0;
+});
+
+final postWellnessStatusProvider = FutureProvider.family<void, String>((ref, message) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final res = await http.post(
+    Uri.parse('http://localhost:8080/api/wellness/activities'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({
+      'type': 'status',
+      'message': message,
+    }),
+  );
+
+  if (res.statusCode != 200) {
+    throw Exception('Failed to post status: ${res.body}');
+  }
+
+});
+
+final stepGoalNotifiedProvider = StateProvider<bool>((ref) => false);
+
+final cachedAchievementIdsProvider = StateProvider<List<String>>((ref) => []);
+
+final loadCachedAchievementsProvider = FutureProvider<void>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final ids = prefs.getStringList('shared_achievements') ?? [];
+  ref.read(cachedAchievementIdsProvider.notifier).state = ids;
+});
+
+final unsharedAchievementsProvider = Provider<List<Achievement>>((ref) {
+  final achievementsAsync = ref.watch(userAchievementsProvider);
+  final cached = ref.watch(cachedAchievementIdsProvider);
+
+  return achievementsAsync.when(
+    data: (achievements) => achievements
+        .where((a) => a.unlocked && !cached.contains(a.id))
+        .toList(),
+    loading: () => [],
+    error: (_, __) => [],
+  );
+});
+
+final markAchievementSharedProvider = Provider.family<Future<void>, String>((ref, achievementId) async {
+  final prefs = await SharedPreferences.getInstance();
+  final current = List<String>.from(ref.read(cachedAchievementIdsProvider));
+  if (!current.contains(achievementId)) {
+    current.add(achievementId);
+    await prefs.setStringList('shared_achievements', current);
+    ref.read(cachedAchievementIdsProvider.notifier).state = current;
+  }
+});
+
+const _chatBaseUrl = 'http://localhost:8080/api/wellness';
+
+final chatApiProvider = Provider((ref) => ChatApi(baseUrl: _chatBaseUrl));
+
+final chatListProvider = FutureProvider<List<Map<String, String>>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  if (token == null) throw Exception('Not authenticated');
+
+  final res = await http.get(
+    Uri.parse('$_chatBaseUrl/friends'),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  if (res.statusCode != 200) {
+    throw Exception('Failed to fetch chat list: ${res.body}');
+  }
+
+  final data = jsonDecode(res.body) as List;
+
+  return data.map((e) => Map<String, String>.from(e)).toList();
+});
+
+final messagesProvider =
+    FutureProvider.family<List<Message>, String>((ref, friendName) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  if (token == null) throw Exception('Not authenticated');
+
+  final res = await http.get(
+    Uri.parse('$_chatBaseUrl/messages/$friendName'),
+    headers: {
+      'Authorization': 'Bearer $token',
+    },
+  );
+
+  if (res.statusCode != 200) {
+    throw Exception('Failed to fetch messages: ${res.body}');
+  }
+
+  final data = jsonDecode(res.body) as List;
+  return data
+      .map((json) => Message.fromJson(json as Map<String, dynamic>))
+      .toList();
+});
+
+final postMessageProvider =
+    FutureProvider.family<void, Message>((ref, message) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  if (token == null) throw Exception('Not authenticated');
+
+  final res = await http.post(
+    Uri.parse('$_chatBaseUrl/messages'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode(message.toJson()),
+  );
+
+  if (res.statusCode != 200) {
+    throw Exception('Failed to send message: ${res.body}');
+  }
+});
+
+class ChatController extends StateNotifier<WebSocketChannel?> {
+  final ChatApi api;
+  final String userId;
+
+  ChatController({required this.api, required this.userId}) : super(null) {
+    _connect();
+  }
+
+  Stream<dynamic>? _broadcast;
+  Stream<dynamic> get wsStream => _broadcast ?? const Stream.empty();
+
+  Future<void> _connect() async {
+    final ch = await api.connectSocket(userId);
+    state = ch;
+    _broadcast = ch.stream.asBroadcastStream();
+  }
+
+  void send(Map<String, dynamic> msg) => state?.sink.add(jsonEncode(msg));
+
+  @override
+  void dispose() {
+    state?.sink.close();
+    super.dispose();
+  }
+}
+
+
+final chatControllerProvider = StateNotifierProvider
+    .family<ChatController, WebSocketChannel?, String>((ref, userId) {
+  final api = ref.watch(chatApiProvider);
+  return ChatController(api: api, userId: userId);
+});
+
+final userIdProvider = FutureProvider<String>((ref) async {
+  final prefs  = await SharedPreferences.getInstance();
+  final token  = prefs.getString('jwt_token') ?? '';
+  if (token.isEmpty) return '';
+
+  final parts = token.split('.');
+  if (parts.length != 3) return '';
+
+  final payload = parts[1]
+      .replaceAll('-', '+')
+      .replaceAll('_', '/')
+      .padRight(parts[1].length + (4 - parts[1].length % 4) % 4, '=');
+
+  try {
+    final decoded = utf8.decode(base64.decode(payload));
+    final json    = jsonDecode(decoded);
+    return json['userId'] as String? ?? '';
+  } catch (_) {
+    return '';
+  }
+});
+
+class _ChatSession {
+  final messages = <Message>[];
+  final seenIds  = <String>{};
+  bool historyLoaded = false;
+}
+
+final chatSessionProvider =
+    StateNotifierProvider.family<_ChatSessionNotifier, _ChatSession, String>((ref, friendId) {
+  return _ChatSessionNotifier();
+});
+
+class _ChatSessionNotifier extends StateNotifier<_ChatSession> {
+  _ChatSessionNotifier() : super(_ChatSession());
+
+
+  void add(Message m) {
+    if (state.seenIds.add(m.id)) state.messages.add(m);
+  }
+
+  void addMany(Iterable<Message> list) {
+    for (final m in list) add(m);
+  }
+
+  void markHistoryLoaded() => state.historyLoaded = true;
+}
+
