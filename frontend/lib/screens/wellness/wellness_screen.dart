@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sum25_flutter_frontend/screens/wellness/leaderboard_screen.dart';
 import 'package:sum25_flutter_frontend/screens/wellness/messaging_screen.dart';
 import 'package:sum25_flutter_frontend/services/providers.dart';
 
@@ -18,20 +19,26 @@ class WellnessScreen extends ConsumerWidget {
         iconTheme: const IconThemeData(color: Colors.pink),
         elevation: 0,
         actions: [
-    IconButton(
-      icon: const Icon(Icons.chat_bubble_outline, color: Colors.pink),
-      onPressed: () async {
-        final userId = await ref.read(userIdProvider.future);
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (ctx) => MessagingScreen(userId:userId), 
+          IconButton(
+            icon: const Icon(Icons.emoji_events,color: Colors.pink),
+            tooltip: 'Leaderboards',
+            onPressed: ()=>Navigator.push(context,MaterialPageRoute(builder:(_)=>LeaderboardScreen())),
           ),
-        );
-      },
-      tooltip: 'Chats',
-    ),
-  ],
+
+          IconButton(
+            icon: const Icon(Icons.chat_bubble_outline, color: Colors.pink),
+            onPressed: () async {
+              final userId = await ref.read(userIdProvider.future);
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (ctx) => MessagingScreen(userId:userId), 
+                ),
+              );
+            },
+            tooltip: 'Chats',
+          ),
+        ],
       ),
       backgroundColor: Colors.white,
       body: ListView(
@@ -198,7 +205,6 @@ class _CreateStatusDialogState extends State<_CreateStatusDialog> {
                     _loading = true;
                     _error = null;
                   });
-
                   try {
                     await widget.ref
                         .read(wellnessApiProvider)

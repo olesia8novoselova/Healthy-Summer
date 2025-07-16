@@ -5,6 +5,7 @@ import 'package:sum25_flutter_frontend/screens/activity/activity_history_screen.
 import 'package:sum25_flutter_frontend/screens/activity/activity_log_screen.dart';
 import 'package:sum25_flutter_frontend/screens/nutrition/nutrition_screen.dart';
 import 'package:sum25_flutter_frontend/screens/wellness/wellness_screen.dart';
+import 'package:sum25_flutter_frontend/screens/wellness/challenge_details_screen.dart';
 import 'screens/user/profile_screen.dart';
 import 'screens/user/all_achievements_screen.dart';
 import 'screens/user/auth_screen.dart';
@@ -128,6 +129,13 @@ final GoRouter _router = GoRouter(
     GoRoute(
       path: '/steps/history',
       builder: (context, state) => StepHistoryScreen(),
+    ),
+    GoRoute(
+      path: '/challenge/:id',
+      builder: (_, state) {
+        final id = state.pathParameters['id']!;
+        return ChallengeDetailScreen(id);
+      },
     ),
   ],
 );

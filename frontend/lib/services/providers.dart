@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:sum25_flutter_frontend/models/activity.dart';
+import 'package:sum25_flutter_frontend/models/challenge.dart';
 import 'package:sum25_flutter_frontend/models/food_item.dart';
 import 'package:sum25_flutter_frontend/models/friend_request.dart';
 import 'package:sum25_flutter_frontend/models/meal.dart';
@@ -12,6 +13,7 @@ import 'package:sum25_flutter_frontend/models/message.dart';
 import 'package:sum25_flutter_frontend/models/post_activity.dart';
 import 'package:sum25_flutter_frontend/services/activity/activity_api.dart';
 import 'package:sum25_flutter_frontend/services/nutrition/nutrition_api.dart';
+import 'package:sum25_flutter_frontend/services/wellness/challenge_api.dart';
 import 'package:sum25_flutter_frontend/services/wellness/chat_api.dart';
 import 'package:sum25_flutter_frontend/services/wellness/wellness_api.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
@@ -21,6 +23,7 @@ import 'user/auth_api.dart';
 import 'user/user_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'activity/step_api.dart';
+import 'package:collection/collection.dart';
 
 class AuthProvider extends ChangeNotifier {
   final _authApi = AuthApi();
@@ -551,7 +554,6 @@ class ChatController extends StateNotifier<WebSocketChannel?> {
   }
 }
 
-
 final chatControllerProvider = StateNotifierProvider
     .family<ChatController, WebSocketChannel?, String>((ref, userId) {
   final api = ref.watch(chatApiProvider);
@@ -606,3 +608,31 @@ class _ChatSessionNotifier extends StateNotifier<_ChatSession> {
   void markHistoryLoaded() => state.historyLoaded = true;
 }
 
+final challengeApiProvider = Provider((_)=>ChallengeApi());
+
+final challengesProvider = FutureProvider<List<Challenge>>((ref) {
+  return ref.read(challengeApiProvider).list();
+});
+final leaderboardProvider  = FutureProvider.family<List<Participant>,String>((ref,id)=>ref.read(challengeApiProvider).leaderboard(id));
+final createChallengeProvider =
+    FutureProvider.family<void, Map<String, dynamic>>((ref, params) {
+  return ref.read(challengeApiProvider).create(
+    params['title']       as String,
+    params['type']        as String,
+    params['target']      as int,
+    participants: (params['participants'] as List).cast<String>(),
+  );
+});
+
+// returns true when *you* reached the target of this challenge
+final challengeCompletedProvider =
+    FutureProvider.family<bool, Challenge>((ref, ch) async {
+  final lbs = await ref.watch(leaderboardProvider(ch.id).future);
+  final uid = ref.read(userIdProvider).valueOrNull;
+  final me  = lbs.firstWhereOrNull((p) => p.userId == uid);
+  return me != null && me.progress >= ch.target;
+});
+
+/// Keeps ids we’ve already popped a dialog for in this session.
+final challengeNotifiedProvider =
+    StateProvider<Set<String>>((_) => <String>{});

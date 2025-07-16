@@ -131,6 +131,107 @@ class ProfileScreen extends ConsumerWidget {
                     ),
                   ],
                 ),
+
+                const SizedBox(height: 24),
+                const Text("Today's Stats",
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.pink,
+                        fontWeight: FontWeight.bold)),
+                const SizedBox(height: 16),
+                burnAsync.when(
+                  data: (burned) => nutritionAsync.when(
+                    data: (nutrition) {
+                      final intake =
+                          (nutrition['calories'] as num?)?.toDouble() ?? 0.0;
+                      final rawGoal =
+                          (nutrition['calorieGoal'] as num?)?.toDouble() ??
+                              (authState.profile?['dailyCalorieGoal']
+                                          as num?)
+                                      ?.toDouble() ??
+                              2000.0;
+                      final goal = rawGoal > 0 ? rawGoal : 2000.0;
+
+                      final burnedClamped =
+                          burned.toDouble().clamp(0, goal).toDouble();
+                      final intakeClamped =
+                          intake.clamp(0, goal).toDouble();
+
+                      String pct(double v) =>
+                          (v / goal * 100).toStringAsFixed(0);
+
+                      Widget chartColumn(String title, double value,
+                          String pctStr, Color color) {
+                        return Expanded(
+                          child: Column(
+                            children: [
+                              Text(title,
+                                  style: const TextStyle(
+                                      color: Colors.pink,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 40),
+                              SizedBox(
+                                height: 120,
+                                child: Stack(
+                                  alignment: Alignment.center,
+                                  children: [
+                                    PieChart(
+                                      PieChartData(
+                                        startDegreeOffset: -90,
+                                        centerSpaceRadius: 40,
+                                        sections: [
+                                          PieChartSectionData(
+                                              value: value,
+                                              color: color,
+                                              radius: 50,
+                                              title: ''),
+                                          PieChartSectionData(
+                                              value: goal - value,
+                                              color: Colors.grey[200],
+                                              radius: 50,
+                                              title: ''),
+                                        ],
+                                      ),
+                                    ),
+                                    Text('$pctStr%',
+                                        style: TextStyle(
+                                            color: color,
+                                            fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+                              Text(
+                                  '${value.toInt()} / ${goal.toInt()} kcal',
+                                  style: TextStyle(
+                                      color: Colors.pink.shade200,
+                                      fontSize: 14)),
+                            ],
+                          ),
+                        );
+                      }
+
+                      return Row(
+                        children: [
+                          chartColumn('Burned', burnedClamped, pct(burnedClamped),
+                              Colors.pink),
+                          const SizedBox(width: 16),
+                          chartColumn('Intake', intakeClamped,
+                              pct(intakeClamped), Colors.pinkAccent),
+                        ],
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => const Text('Error loading intake',
+                        style: TextStyle(color: Colors.red)),
+                  ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (e, _) => const Text('Error loading burned calories',
+                      style: TextStyle(color: Colors.red)),
+                ),
                 SizedBox(height: 24),
 
                 Text('Friends', style: TextStyle(fontSize: 18, color: Colors.pink, fontWeight: FontWeight.bold)),
