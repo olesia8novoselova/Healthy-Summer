@@ -345,3 +345,10 @@ func (u *userService) GetFriendIDs(userID string) ([]string, error) {
 	`, userID)
 	return ids, err
 }
+
+func (s *userService) IDByEmail(email string) (string, error) {
+    var id string
+    err := db.DB.Get(&id, `SELECT id FROM users WHERE email=$1`, email)
+    return id, err
+}
+

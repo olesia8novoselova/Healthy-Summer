@@ -32,6 +32,11 @@ func AddActivity(c *gin.Context) {
         c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to log activity"})
         return
     }
+
+    if err := services.Challenge.
+        BumpProgress(userID, "workouts", 1); err != nil {
+        log.Printf("[Challenge] bump workouts: %v", err)
+    }
     c.Status(http.StatusOK)
 }
 

@@ -1,6 +1,7 @@
 package activity
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -25,6 +26,11 @@ func AddSteps(c *gin.Context) {
     }
 
     _ = services.Step.AwardStepAchievements(userID)
+
+    if err := services.Challenge.
+        BumpProgress(userID, "steps", req.Steps); err != nil {
+        log.Printf("[Challenge] bump steps: %v", err)
+    }
 
     c.Status(http.StatusOK)
 }

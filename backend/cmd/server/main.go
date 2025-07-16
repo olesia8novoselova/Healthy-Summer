@@ -118,6 +118,10 @@ func main() {
 			wellnessGroup.GET("/messages/:friendId", wellness.GetMessages)
 			wellnessGroup.GET("/friends", wellness.GetChatList)
 			wellnessGroup.POST("/messages", wellness.PostMessage)
+			wellnessGroup.POST("/challenges", wellness.CreateChallenge)
+			wellnessGroup.GET("/challenges", wellness.ListChallenges)
+			wellnessGroup.POST("/challenges/:id/join", wellness.JoinChallenge)
+			wellnessGroup.GET("/challenges/:id/leaderboard", wellness.GetLeaderboard)
 		}
 	}
 

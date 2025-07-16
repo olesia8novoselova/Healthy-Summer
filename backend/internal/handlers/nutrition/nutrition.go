@@ -22,6 +22,11 @@ func AddMeal(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to add meal"})
 		return
 	}
+
+	if err := services.Challenge.BumpProgress(userID, "calories", int(req.Calories)); err != nil {
+		log.Printf("[Challenge] bump kcal: %v", err)
+    }
+
 	c.Status(http.StatusOK)
 }
 
