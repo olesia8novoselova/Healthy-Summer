@@ -42,8 +42,11 @@ CMD ["flutter", "run", "-d", "web-server", "--web-port", "3000", "--web-hostname
 # Production build stage
 FROM development AS builder
 
+ARG API_BASE_URL
+
 # Build for web
-RUN flutter build web --release
+RUN flutter build web --release \
+    --dart-define=API_BASE_URL=$API_BASE_URL
 
 # Production stage with nginx
 FROM nginx:alpine AS production

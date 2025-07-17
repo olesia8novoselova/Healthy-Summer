@@ -1,9 +1,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sum25_flutter_frontend/config.dart';
 
 class StepApi {
-  static const String baseUrl = 'http://localhost:8080/api/activities';
+  static const String baseUrl = '$activityBase';
 
   Future<void> addSteps(int steps) async {
     final prefs = await SharedPreferences.getInstance();

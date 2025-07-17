@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sum25_flutter_frontend/config.dart';
 import 'package:sum25_flutter_frontend/models/challenge.dart';
 
 class ChallengeApi {
-  final String base = 'http://localhost:8080/api/wellness';
+  final String base = '$wellnessBase';
 
   Future<List<Challenge>> list() async {
     final token = (await _prefs()).getString('jwt_token');
@@ -58,7 +59,7 @@ class ChallengeApi {
     }
 
     final List decoded = jsonDecode(res.body) as List;
-    return decoded.map((e) => Participant.fromJson(e)).toList(); // ← always returns
+    return decoded.map((e) => Participant.fromJson(e)).toList();
   }
 
   Future<SharedPreferences> _prefs() => SharedPreferences.getInstance();

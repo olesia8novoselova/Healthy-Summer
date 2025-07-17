@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../config.dart'; 
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8080/api';
+  static const String baseUrl = '$apiBase/api';
 
   final http.Client _client;
 
@@ -12,7 +13,7 @@ class ApiService {
   Future<Map<String, dynamic>> healthCheck() async {
     try {
       final response = await _client.get(
-        Uri.parse('http://localhost:8080/health'),
+        Uri.parse('$apiBase/health'),
         headers: {'Content-Type': 'application/json'},
       );
 

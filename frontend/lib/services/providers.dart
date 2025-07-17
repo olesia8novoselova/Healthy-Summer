@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
+import 'package:sum25_flutter_frontend/config.dart';
 import 'package:sum25_flutter_frontend/models/activity.dart';
 import 'package:sum25_flutter_frontend/models/challenge.dart';
 import 'package:sum25_flutter_frontend/models/food_item.dart';
@@ -116,7 +117,7 @@ final foodSearchProvider = FutureProvider.family<List<FoodItem>, String>((ref, q
   final token = prefs.getString('jwt_token');
 
   final resp = await http.get(
-    Uri.parse('http://localhost:8080/api/nutrition/foods/search?q=$query'),
+    Uri.parse('$nutritionBase/foods/search?q=$query'),
     headers: {
       if (token != null) 'Authorization': 'Bearer $token',
     },
@@ -136,7 +137,7 @@ final mealsProvider = FutureProvider<List<Meal>>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final resp = await http.get(
-    Uri.parse('http://localhost:8080/api/nutrition/meals'),
+    Uri.parse('$nutritionBase/meals'),
     headers: {'Authorization': 'Bearer $token'}
   );
   if (resp.statusCode == 200) {
@@ -152,7 +153,7 @@ final nutritionStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async 
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final resp = await http.get(
-    Uri.parse('http://localhost:8080/api/nutrition/stats'),
+    Uri.parse('$nutritionBase/stats'),
     headers: {'Authorization': 'Bearer $token'}
   );
   if (resp.statusCode == 200) return jsonDecode(resp.body);
@@ -166,7 +167,7 @@ final weeklyNutritionStatsProvider = FutureProvider<List<Map<String, dynamic>>>(
   final token = prefs.getString('jwt_token');
 
   final resp = await http.get(
-    Uri.parse('http://localhost:8080/api/nutrition/stats/weekly'),
+    Uri.parse('$nutritionBase/stats/weekly'),
     headers: {'Authorization': 'Bearer $token'},
   );
 
@@ -189,7 +190,7 @@ final todayWaterProvider = FutureProvider<Map<String, dynamic>>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final resp = await http.get(
-    Uri.parse('http://localhost:8080/api/nutrition/water/today'),
+    Uri.parse('$nutritionBase/water/today'),
     headers: {'Authorization': 'Bearer $token'},
   );
   if (resp.statusCode == 200) return jsonDecode(resp.body);
@@ -200,7 +201,7 @@ final weeklyWaterProvider = FutureProvider<List<Map<String, dynamic>>>((ref) asy
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final resp = await http.get(
-    Uri.parse('http://localhost:8080/api/nutrition/water/weekly'),
+    Uri.parse('$nutritionBase/water/weekly'),
     headers: {'Authorization': 'Bearer $token'},
   );
 
@@ -223,7 +224,7 @@ final setWaterGoalProvider = FutureProvider.family<void, int>((ref, goal) async 
   final token = prefs.getString('jwt_token');
 
   final response = await http.post(
-    Uri.parse('http://localhost:8080/api/nutrition/water/goal'),
+    Uri.parse('$nutritionBase/water/goal'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -241,7 +242,7 @@ final waterGoalProvider = FutureProvider<int>((ref) async {
   final token = prefs.getString('jwt_token');
 
   final response = await http.get(
-    Uri.parse('http://localhost:8080/api/nutrition/water/goal'),
+    Uri.parse('$nutritionBase/water/goal'),
     headers: {'Authorization': 'Bearer $token'},
   );
 
@@ -259,7 +260,7 @@ final setCalorieGoalProvider = FutureProvider.family<void, int>((ref, goal) asyn
   final token = prefs.getString('jwt_token');
 
   final response = await http.post(
-    Uri.parse('http://localhost:8080/api/nutrition/calories/goal'),
+    Uri.parse('$nutritionBase/calories/goal'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -277,7 +278,7 @@ final calorieGoalProvider = FutureProvider<int>((ref) async {
   final token = prefs.getString('jwt_token');
 
   final response = await http.get(
-    Uri.parse('http://localhost:8080/api/nutrition/calories/goal'),
+    Uri.parse('$nutritionBase/calories/goal'),
     headers: {'Authorization': 'Bearer $token'},
   );
 
@@ -293,7 +294,7 @@ final stepGoalProvider = FutureProvider<int>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final response = await http.get(
-    Uri.parse('http://localhost:8080/api/activities/steps/goal'),
+    Uri.parse('$activityBase/steps/goal'),
     headers: {'Authorization': 'Bearer $token'},
   );
   if (response.statusCode == 200) {
@@ -308,7 +309,7 @@ final setStepGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final response = await http.post(
-    Uri.parse('http://localhost:8080/api/activities/steps/goal'),
+    Uri.parse('$activityBase/steps/goal'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -324,7 +325,7 @@ final activityGoalProvider = FutureProvider<int>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final res = await http.get(
-    Uri.parse('http://localhost:8080/api/activities/goal'),
+    Uri.parse('$activityBase/goal'),
     headers: {
       'Authorization': 'Bearer $token',
     },
@@ -338,7 +339,7 @@ final setActivityGoalProvider = FutureProvider.family<void, int>((ref, goal) asy
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final res = await http.post(
-    Uri.parse('http://localhost:8080/api/activities/goal'),
+    Uri.parse('$activityBase/goal'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -352,7 +353,7 @@ final todayActivityCaloriesProvider = FutureProvider<int>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final res = await http.get(
-    Uri.parse('http://localhost:8080/api/activities/today-calories'),
+    Uri.parse('$activityBase/today-calories'),
     headers: {
       'Authorization': 'Bearer $token',
     },
@@ -367,7 +368,7 @@ final weeklyActivityStatsProvider = FutureProvider<List<Map<String, dynamic>>>((
   final token = prefs.getString('jwt_token');
   
   final res = await http.get(
-    Uri.parse('http://localhost:8080/api/activities/activity/weekly'),
+    Uri.parse('$activityBase/activity/weekly'),
     headers: {
       'Authorization': 'Bearer $token',
     },
@@ -410,7 +411,7 @@ final postWellnessStatusProvider = FutureProvider.family<void, String>((ref, mes
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final res = await http.post(
-    Uri.parse('http://localhost:8080/api/wellness/activities'),
+    Uri.parse('$wellnessBase/activities'),
     headers: {
       'Authorization': 'Bearer $token',
       'Content-Type': 'application/json',
@@ -460,7 +461,7 @@ final markAchievementSharedProvider = Provider.family<Future<void>, String>((ref
   }
 });
 
-const _chatBaseUrl = 'http://localhost:8080/api/wellness';
+const _chatBaseUrl = '$wellnessBase';
 
 final chatApiProvider = Provider((ref) => ChatApi(baseUrl: _chatBaseUrl));
 

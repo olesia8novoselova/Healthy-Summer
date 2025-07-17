@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
-
+import 'package:sum25_flutter_frontend/config.dart';
 class NutritionApi {
-  final String baseUrl = 'http://localhost:8080/api/nutrition';
+  final String baseUrl = '$nutritionBase';
 
   Future<void> addMeal({
     required int fdcId,
@@ -60,7 +60,7 @@ class NutritionApi {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   final resp = await http.get(
-    Uri.parse('http://localhost:8080/api/nutrition/water/weekly'),
+    Uri.parse('$nutritionBase/water/weekly'),
     headers: {'Authorization': 'Bearer $token'},
   );
   debugPrint('Weekly water raw body: ${resp.body}');

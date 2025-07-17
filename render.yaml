@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: backend
+    env: docker
+    dockerfilePath: backend/Dockerfile
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: DATABASE_URL           # etc.
+        value: ${DATABASE_URL}
+
+  - type: web
+    name: frontend
+    env: docker
+    dockerfilePath: frontend/Dockerfile
+    plan: starter
+    build:
+      args:
+        API_BASE_URL: https://sum25-go-flutter-course.onrender.com

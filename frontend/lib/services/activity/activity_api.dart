@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sum25_flutter_frontend/config.dart';
 import 'package:sum25_flutter_frontend/models/activity.dart';
 
 class ActivityApi {
-  final String baseUrl = 'http://localhost:8080/api/activities';
+  final String baseUrl = '$activityBase';
 
   Future<void> addActivity({
     required String type,

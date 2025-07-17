@@ -2,12 +2,13 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sum25_flutter_frontend/config.dart';
 import 'package:sum25_flutter_frontend/models/friend_request.dart';
 import '../../models/friend.dart';
 import '../../models/achievement.dart';
 
 class UserApi {
-  static const String baseUrl = 'http://localhost:8080/api/users';
+  static const String baseUrl = '$usersBase';
 
   Future<Map<String, dynamic>> fetchProfile() async {
     final prefs = await SharedPreferences.getInstance();

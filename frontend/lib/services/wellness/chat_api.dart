@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:sum25_flutter_frontend/config.dart';
 import 'package:sum25_flutter_frontend/models/message.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -21,7 +22,7 @@ class ChatApi {
 
   // Fetch message history with a friend
   Future<List<Message>> fetchMessages(String friend) async {
-    final res = await http.get(Uri.parse('\$baseUrl/messages/\$friend'));
+    final res = await http.get(Uri.parse('$baseUrl/messages/\$friend'));
     if (res.statusCode != 200) {
       throw Exception('Failed to load messages');
     }
@@ -34,11 +35,13 @@ class ChatApi {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   // Use the passed-in userId, not the one from prefs
-  final url = 'ws://localhost:8080/api/wellness/ws?user=$userId&token=$token';
+  String _wsHost() => apiBase.startsWith('https')
+        ? apiBase.replaceFirst('https', 'wss')
+        : apiBase.replaceFirst('http',  'ws');
+
+final url = '$_wsHost/api/wellness/ws?user=$userId&token=$token';
   return WebSocketChannel.connect(Uri.parse(url));
 }
-
-
   // Send a message via WebSocket
   void sendMessage(WebSocketChannel channel, Message msg) {
     print('[ChatApi] Sending message: ${msg.toJson()}');
