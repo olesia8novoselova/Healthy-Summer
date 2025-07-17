@@ -16,9 +16,10 @@ import (
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers"
 	activity "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/activity"
 	nutrition "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/nutrition"
-	wellness "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/wellness"
 	user "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/user"
+	wellness "github.com/timur-harin/sum25-go-flutter-course/backend/internal/handlers/wellness"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/middleware"
+	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/services"
 
 	"github.com/timur-harin/sum25-go-flutter-course/backend/pkg/db"
 )
@@ -32,13 +33,12 @@ func main() {
 	if err := db.Init(cfg); err != nil {
     	log.Fatalf("DB init failed: %v", err)
 	}
-	//log.Println("Loaded JWT_SECRET:", cfg.JWTSecret)
-
 
 	// Initialize Gin router
 	if cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
+	services.Schedule.StartTicker() 
 
 	router := gin.New()
 
@@ -88,6 +88,9 @@ func main() {
 			activities.GET("/goal", activity.GetActivityGoal)
 			activities.GET("/today-calories", activity.GetTodayActivityCalories)
 			activities.GET("/activity/weekly", activity.GetWeeklyActivityStats)
+			activities.POST("/schedule/workouts", wellness.AddWorkout)
+			activities.GET("/schedule/workouts", wellness.ListWorkouts)
+			activities.DELETE("/schedule/workouts/:id", wellness.DeleteWorkout)
 		}
 
 		nutritionGroup := api.Group("/nutrition")

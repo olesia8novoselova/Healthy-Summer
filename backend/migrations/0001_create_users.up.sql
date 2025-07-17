@@ -21,7 +21,7 @@ CREATE TABLE user_achievements (
   user_id        UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   achievement_id UUID NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
   unlocked_at    TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-  challenge_id UUID
+  --challenge_id UUID
 );
 CREATE TABLE IF NOT EXISTS friend_requests (
   id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
