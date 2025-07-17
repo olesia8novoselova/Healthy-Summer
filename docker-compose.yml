@@ -1,7 +1,7 @@
 services:
   # PostgreSQL Database
   postgres:
-    image: postgres:17.5-alpine
+    image: postgres:16-alpine
     container_name: course_postgres
     environment:
       POSTGRES_DB: coursedb
@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: coursepass
       POSTGRES_HOST_AUTH_METHOD: trust
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./backend/migrations:/docker-entrypoint-initdb.d
@@ -27,7 +27,7 @@ services:
       target: production
     container_name: course_backend
     ports:
-      - "8080:8080"
+      - "8081:8080"
     environment:
       - ENV=development
       - DATABASE_URL=postgres://courseuser:coursepass@postgres:5432/coursedb?sslmode=disable
