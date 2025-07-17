@@ -3,20 +3,46 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sum25_flutter_frontend/screens/activity/activity_history_screen.dart';
 import 'package:sum25_flutter_frontend/screens/activity/activity_log_screen.dart';
+import 'package:sum25_flutter_frontend/screens/activity/step_dashboard_screen.dart';
+import 'package:sum25_flutter_frontend/screens/activity/step_history_screen.dart';
 import 'package:sum25_flutter_frontend/screens/nutrition/nutrition_screen.dart';
+import 'package:sum25_flutter_frontend/screens/user/all_achievements_screen.dart';
+import 'package:sum25_flutter_frontend/screens/user/auth_screen.dart';
+import 'package:sum25_flutter_frontend/screens/user/profile_screen.dart';
+import 'package:sum25_flutter_frontend/screens/user/register_screen.dart';
 import 'package:sum25_flutter_frontend/screens/wellness/wellness_screen.dart';
 import 'package:sum25_flutter_frontend/screens/wellness/challenge_details_screen.dart';
-import 'screens/user/profile_screen.dart';
-import 'screens/user/all_achievements_screen.dart';
-import 'screens/user/auth_screen.dart';
-import 'screens/user/register_screen.dart';
-import 'screens/main_shell.dart';
-import 'screens/activity/step_dashboard_screen.dart';
-import 'screens/activity/step_history_screen.dart';
+import 'package:sum25_flutter_frontend/screens/main_shell.dart';
+import 'package:sum25_flutter_frontend/services/providers.dart';
+import 'package:sum25_flutter_frontend/services/wellness/notification_service.dart';
+import 'package:sum25_flutter_frontend/services/wellness/reminder_listener.dart';
 
+class _ReminderObserver extends ProviderObserver {
+  bool _attached = false;
 
-void main() {
-  runApp(const ProviderScope(child: CourseApp()));
+  @override
+  void didUpdateProvider(
+      ProviderBase provider, Object? prev, Object? next, ProviderContainer c) {
+
+    if (provider == userIdProvider && next is AsyncValue<String>) {
+      next.whenData((uid) {
+        if (!_attached && uid.isNotEmpty) {
+          attachReminderListener(c);   // ← pass the container
+          _attached = true;
+        }
+      });
+    }
+  }
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await initLocalNotif();              // already in your file
+
+  runApp(ProviderScope(
+    observers: [_ReminderObserver()],
+    child: const CourseApp(),
+  ));
 }
 
 class CourseApp extends StatelessWidget {
@@ -29,7 +55,7 @@ class CourseApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.light(
           primary: Colors.white,
-          secondary: const Color(0xFFF8BBD0), // Soft pink
+          secondary: const Color(0xFFF8BBD0),
         ),
         scaffoldBackgroundColor: Colors.white,
         useMaterial3: true,
@@ -132,10 +158,7 @@ final GoRouter _router = GoRouter(
     ),
     GoRoute(
       path: '/challenge/:id',
-      builder: (_, state) {
-        final id = state.pathParameters['id']!;
-        return ChallengeDetailScreen(id);
-      },
+      builder: (_, state) => ChallengeDetailScreen(state.pathParameters['id']!),
     ),
   ],
 );

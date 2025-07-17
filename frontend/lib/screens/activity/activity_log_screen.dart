@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:sum25_flutter_frontend/screens/activity/activity_goals_screen.dart';
+import 'package:sum25_flutter_frontend/screens/activity/workout_reminder.dart';
 import 'package:sum25_flutter_frontend/services/providers.dart';
+
 
 const caloriesPerMinute = {
   'running': 10.0,
@@ -19,67 +21,64 @@ double calculateCalories(String? type, int duration) {
 class ActivityLogScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final activitiesAsync = ref.watch(activitiesProvider(null));
-    final goalAsync = ref.watch(activityGoalProvider);
-    final todayCaloriesAsync = ref.watch(todayActivityCaloriesProvider);
-    final goalReached = ref.watch(activityGoalReachedProvider);
-    final alreadyNotified = ref.watch(goalNotifiedProvider);
+    final activitiesAsync      = ref.watch(activitiesProvider(null));
+    final goalAsync            = ref.watch(activityGoalProvider);
+    final todayCaloriesAsync   = ref.watch(todayActivityCaloriesProvider);
+    final goalReached          = ref.watch(activityGoalReachedProvider);
+    final alreadyNotified      = ref.watch(goalNotifiedProvider);
 
-    // 🔔 Show share dialog once when goal is reached
+    // 🔔 share-dialog when daily activity goal reached
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (goalReached && !alreadyNotified) {
         ref.read(goalNotifiedProvider.notifier).state = true;
         showDialog(
           context: context,
           builder: (_) => AlertDialog(
-            title: Text("🎉 Activity Goal Reached!"),
-            content: Text("You reached your activity goal today! Want to share it with friends?"),
+            title: const Text('🎉 Activity Goal Reached!'),
+            content: const Text(
+                "You reached your activity goal today! Want to share it with friends?"),
             actions: [
               TextButton(
-                child: Text("Not now"),
                 onPressed: () => Navigator.pop(context),
-                
-                style: TextButton.styleFrom(foregroundColor: Colors.pink),
+                style  : TextButton.styleFrom(foregroundColor: Colors.pink),
+                child  : const Text('Not now'),
               ),
               TextButton(
-                child: Text("Share"),
+                style: TextButton.styleFrom(foregroundColor: Colors.pink),
+                child: const Text('Share'),
                 onPressed: () async {
                   if (context.mounted && Navigator.canPop(context)) {
                     Navigator.pop(context);
                   }
-                  await Future.delayed(const Duration(milliseconds: 200)); 
+                  await Future.delayed(const Duration(milliseconds: 200));
                   try {
                     await ref.read(wellnessApiProvider).postWellnessActivity(
-                      type: "activity_goal",
-                      message: "I just hit my daily activity goal! 💪",
+                      type: 'activity_goal',
+                      message: 'I just hit my daily activity goal! 💪',
                     );
                     if (context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("Shared to friends 🎉")),
-                      );
+                          const SnackBar(content: Text('Shared to friends 🎉')));
                     }
                   } catch (e) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Failed to share: $e")),
-                    );
+                        SnackBar(content: Text('Failed: $e')));
                   }
                 },
-                style: TextButton.styleFrom(foregroundColor: Colors.pink),
-              )
+              ),
             ],
           ),
         );
       }
     });
 
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('Activity Log', style: TextStyle(color: Colors.pink)),
+        title: const Text('Activity Log', style: TextStyle(color: Colors.pink)),
         backgroundColor: Colors.white,
         actions: [
           IconButton(
-            icon: Icon(Icons.history, color: Colors.pink),
+            icon : const Icon(Icons.history, color: Colors.pink),
             onPressed: () => context.push('/history'),
           ),
         ],
@@ -87,7 +86,7 @@ class ActivityLogScreen extends ConsumerWidget {
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
         backgroundColor: Colors.pink,
-        child: Icon(Icons.add, color: Colors.white),
+        child: const Icon(Icons.add, color: Colors.white),
         onPressed: () => showDialog(
           context: context,
           builder: (ctx) => AddActivityDialog(ref: ref),
@@ -95,6 +94,7 @@ class ActivityLogScreen extends ConsumerWidget {
       ),
       body: Column(
         children: [
+          // ───── progress bar section ────────────────────────────────────
           goalAsync.when(
             data: (goal) {
               return todayCaloriesAsync.when(
@@ -103,7 +103,7 @@ class ActivityLogScreen extends ConsumerWidget {
                   return Column(
                     children: [
                       Padding(
-                        padding: const EdgeInsets.all(12.0),
+                        padding: const EdgeInsets.all(12),
                         child: LinearProgressIndicator(
                           value: progress,
                           minHeight: 14,
@@ -111,31 +111,33 @@ class ActivityLogScreen extends ConsumerWidget {
                           color: Colors.pink,
                         ),
                       ),
-                      Text(
-                        'Today: $todayCals / $goal kcal',
-                        style: TextStyle(color: Colors.pink),
-                      ),
-                      SizedBox(height: 8),
+                      Text('Today: $todayCals / $goal kcal',
+                          style: const TextStyle(color: Colors.pink)),
+                      const SizedBox(height: 8),
                     ],
                   );
                 },
-                loading: () => CircularProgressIndicator(),
-                error: (e, _) => Text('Error: $e'),
+                loading: () => const CircularProgressIndicator(),
+                error  : (e, _) => Text('Error: $e'),
               );
             },
-            loading: () => CircularProgressIndicator(),
-            error: (e, _) => Text('Goal Error: $e'),
+            loading: () => const CircularProgressIndicator(),
+            error  : (e, _) => Text('Goal Error: $e'),
           ),
+
+          // ───── activity list ───────────────────────────────────────────
           Expanded(
             child: activitiesAsync.when(
               data: (activities) => activities.isEmpty
-                  ? Center(child: Text('No activities yet', style: TextStyle(color: Colors.pink)))
+                  ? const Center(
+                      child:
+                          Text('No activities yet', style: TextStyle(color: Colors.pink)))
                   : ListView(
                       children: activities
                           .map((a) => ListTile(
                                 title: Text(
                                   '${a.name.isNotEmpty ? a.name : a.type} (${a.type})',
-                                  style: TextStyle(color: Colors.pink),
+                                  style: const TextStyle(color: Colors.pink),
                                 ),
                                 subtitle: Text(
                                   '${a.duration} min, ${a.calories} kcal, ${a.location}, '
@@ -144,14 +146,17 @@ class ActivityLogScreen extends ConsumerWidget {
                               ))
                           .toList(),
                     ),
-              loading: () => Center(child: CircularProgressIndicator()),
-              error: (e, _) => Center(child: Text('Failed: $e', style: TextStyle(color: Colors.red))),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error  : (e, _) => Center(
+                  child: Text('Failed: $e', style: const TextStyle(color: Colors.red))),
             ),
           ),
+
+          // ───── bottom actions ──────────────────────────────────────────
           ListTile(
-            leading: Icon(Icons.flag, color: Colors.pink),
-            title: Text("Set Activity Goal", style: TextStyle(color: Colors.black)),
-            onTap: () {
+            leading: const Icon(Icons.flag, color: Colors.pink),
+            title : const Text('Set Activity Goal'),
+            onTap : () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const ActivityGoalSettingsScreen()),
@@ -161,12 +166,21 @@ class ActivityLogScreen extends ConsumerWidget {
               });
             },
           ),
+
+          // ↓↓↓ NEW tile to open workout-reminder dialog ↓↓↓
+          ListTile(
+            leading: const Icon(Icons.alarm, color: Colors.pink),
+            title : const Text('Workout reminders'),
+            onTap : () => showDialog(
+              context: context,
+              builder : (_) => const AddWorkoutReminderDialog(),
+            ),
+          ),
         ],
       ),
     );
   }
 }
-
 
 class AddActivityDialog extends StatefulWidget {
   final WidgetRef ref;

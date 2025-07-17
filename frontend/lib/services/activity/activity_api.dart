@@ -61,4 +61,22 @@ class ActivityApi {
       throw Exception('Failed to fetch activities');
     }
   }
+  Future<void> postWorkoutReminder(String path, Map<String, dynamic> data) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('jwt_token');
+    if (token == null) throw Exception('Not authenticated');
+
+    final response = await http.post(
+      Uri.parse('$baseUrl$path'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(data),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to post workout reminder: ${response.body}');
+    }
+  }
 }
