@@ -217,19 +217,16 @@ jobs:
 
       - name: Build frontend (web)
         working-directory: frontend
-        run: flutter build web --release
-
-      - name: Upload backend artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: backend-binaries
-          path: backend/bin/
+        run: |
+          flutter build web --release \
+            --dart-define=API_BASE_URL=https://sum25-go-flutter-course.onrender.com \
+            --base-href="/${{ github.repository }}/"
 
       - name: Upload frontend artifacts
         uses: actions/upload-artifact@v3
         with:
           name: frontend-web
-          path: frontend/build/web/
+          path: frontend/build/web   
 
   # Docker build and push
   docker:
@@ -319,116 +316,33 @@ jobs:
         uses: github/codeql-action/upload-sarif@v2
         with:
           sarif_file: 'trivy-results.sarif'
-
-  # Lab validation (for student submissions)
-  validate-labs:
-    name: Validate Lab Submissions
+  
+  deploy-pages:
+    name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
-    if: contains(github.head_ref, 'lab')
+    needs: build
+    if: github.ref == 'refs/heads/main'
+
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Go
-        uses: actions/setup-go@v4
+      - uses: actions/checkout@v4
         with:
-          go-version: ${{ env.GO_VERSION }}
+          fetch-depth: 0
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - name: Download frontend artefact
+        uses: actions/download-artifact@v3
         with:
-          flutter-version: ${{ env.FLUTTER_VERSION }}
-          channel: 'stable' # Optional: specify channel
+          name: frontend-web          # ← artefact name from the upload step
+          path: web-dist              # ← where to unpack it locally
 
-      - name: Extract lab number
-        id: lab
+      - name: Show Contents
         run: |
-          LAB_NUM=$(echo ${{ github.head_ref }} | grep -o 'lab[0-9]*' | grep -o '[0-9]*')
-          if [ -z "$LAB_NUM" ]; then
-            echo "Could not extract lab number from branch ${{ github.head_ref }}"
-            exit 1
-          fi
-          echo "number=$LAB_NUM" >> $GITHUB_OUTPUT
-          echo "Lab number extracted: $LAB_NUM"
+          echo "== tree web-dist =="
+          find web-dist -maxdepth 3 -print
 
-      - name: Validate lab structure and run Go/Flutter specific tasks
-        run: |
-          LAB_DIR="labs/lab${{ steps.lab.outputs.number }}"
-          echo "Validating lab: $LAB_DIR"
-
-          if [ ! -d "$LAB_DIR" ]; then
-            echo "❌ Lab directory $LAB_DIR not found"
-            exit 1
-          fi
-          
-          if [ ! -f "$LAB_DIR/README.md" ]; then
-            echo "❌ README.md not found in $LAB_DIR"
-            exit 1
-          fi
-          echo "✅ Lab structure validation passed for $LAB_DIR/README.md"
-
-          # Backend validation (Go)
-          LAB_BACKEND_DIR="$LAB_DIR/backend"
-          if [ -d "$LAB_BACKEND_DIR" ]; then
-            echo "🧪 Found backend component in $LAB_BACKEND_DIR. Processing..."
-            cd "$LAB_BACKEND_DIR"
-            if [ -f "go.mod" ]; then
-              echo "Installing Go dependencies for lab backend..."
-              go mod download
-              go mod tidy
-            else
-              echo "ℹ️ No go.mod found in $LAB_BACKEND_DIR. Skipping dependency installation."
-            fi
-            echo "Linting Go code for lab backend..."
-            go vet ./...
-            if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-              echo "❌ Go code in $LAB_BACKEND_DIR is not formatted. Please run 'go fmt ./...'"
-              gofmt -s -l .
-              # exit 1 # Consider if this should be a hard fail
-            else
-              echo "✅ Go code formatting check passed for lab backend."
-            fi
-            echo "Running Go unit tests for lab backend..."
-            go test -v ./...
-            cd ../.. # Return to LAB_DIR's parent
-            echo "✅ Backend component processing completed for $LAB_BACKEND_DIR."
-          else
-            echo "ℹ️ No backend component found in $LAB_BACKEND_DIR."
-          fi
-
-          # Frontend validation (Flutter)
-          LAB_FRONTEND_DIR="$LAB_DIR/frontend"
-          if [ -d "$LAB_FRONTEND_DIR" ]; then
-            echo "🧪 Found frontend component in $LAB_FRONTEND_DIR. Processing..."
-            cd "$LAB_FRONTEND_DIR"
-            if [ -f "pubspec.yaml" ]; then
-              echo "Installing Flutter dependencies for lab frontend..."
-              flutter pub get
-            else
-              echo "ℹ️ No pubspec.yaml found in $LAB_FRONTEND_DIR. Skipping dependency installation."
-            fi
-            echo "Linting Dart code for lab frontend..."
-            dart analyze --fatal-infos --fatal-warnings . # Stricter linting
-            echo "Formatting Dart code for lab frontend..."
-            dart format --set-exit-if-changed .
-            echo "Running Flutter unit tests for lab frontend..."
-            flutter test
-            cd ../.. # Return to LAB_DIR's parent
-            echo "✅ Frontend component processing completed for $LAB_FRONTEND_DIR."
-          else
-            echo "ℹ️ No frontend component found in $LAB_FRONTEND_DIR."
-          fi
-          
-          echo "✅ Lab Go/Flutter specific tasks validation passed for $LAB_DIR"
-
-      - name: Run lab-specific general tests (test.sh)
-        run: |
-          LAB_DIR="labs/lab${{ steps.lab.outputs.number }}"
-          if [ -f "$LAB_DIR/test.sh" ]; then
-            echo "🧪 Running lab-specific general tests from $LAB_DIR/test.sh..."
-            chmod +x "$LAB_DIR/test.sh"
-            (cd "$LAB_DIR" && ./test.sh)
-            echo "✅ Lab-specific general tests completed."
-          else
-            echo "ℹ️ No general lab-specific test script (test.sh) found in $LAB_DIR."
-          fi 
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: web-dist 
+          publish_branch: gh-pages
+          keep_files: false
