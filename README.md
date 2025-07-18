@@ -1,188 +1,210 @@
-# Summer 2025 Go + Flutter Course
+# "Healthy Summer" - Full-Stack Wellness Application
 
-A comprehensive 8-blocks intensive course teaching modern full-stack development with Go backend and Flutter frontend, emphasizing real-world software engineering practices.
+**Course**: Summer 2025 Go + Flutter Course  
+**Instructor**: Timur Harin  
+**Grade**: Automatic A (upon successful completion + technical interview)
 
-## 🎯 Course Overview
+---
 
-This course is designed for 1st/2nd year students to build practical skills in:
-- **Backend Development**: Go with RESTful APIs, databases, and microservices
-- **Frontend Development**: Flutter for cross-platform applications
-- **DevOps**: Docker containerization, CI/CD pipelines, automated testing
-- **Database Management**: PostgreSQL with migrations and optimization
-- **Software Engineering**: Code review, testing, documentation, and collaboration
+## 🎯 Project Overview
 
-## 📚 Course Structure
+Build a comprehensive **"Healthy Summer"** wellness application that helps users track their summer health activities, nutrition, fitness goals, and social wellness. This project will demonstrate mastery of all course concepts through a real-world, production-ready application.
 
-### 8 blocks
-Each block consists of:
-- **1 Lecture** (1.5 hours): Deep theory, concepts, and comprehensive code examples
-- **1 Lab** (1.5 hours): Extended hands-on implementation with **both Go and Flutter**
+---
 
-**Block 1**: Foundations
-- Go: Basic syntax, functions, structs, packages
-- Flutter: Widgets, layouts, basic UI components, stateful/stateless widgets
-- Integration: None
-- **Deep Dive**: Memory management, Go idioms, Flutter widget lifecycle
+## 👥 Core Features & User Stories
 
-**Block 2**: Concurrency & Streams
-- Go: Goroutines, channels, select statements, worker pools, context package
-- Flutter: Async/await, futures, streams, StreamBuilder
-- Integration: Concurrent API calls and real-time data updates
-- **Deep Dive**: Advanced concurrency patterns, stream transformations
+### 1. Activity Tracking System
 
-**Block 3**: Data & APIs
-- Go: HTTP servers, routing, middleware, JSON APIs, validation, error handling
-- Flutter: HTTP client, data models, serialization, caching
-- Integration: RESTful API communication and robust data handling
-- **Deep Dive**: API design patterns, advanced serialization, performance
+#### Use Case: Daily Workout Logging
+**User Story**: As a fitness enthusiast, I want to log my daily workouts so that I can track my progress and maintain consistency.
 
-**Block 4**: Database & Persistence
-- Go: PostgreSQL integration, GORM, migrations, transactions
-- Flutter: Local storage, SQLite, data caching
-- Integration: CRUD operations
-- **Deep Dive**: Database optimization, complex queries, data architecture
+**Acceptance Criteria**:
+- User can add new activities (running, swimming, cycling, yoga, etc.)
+- Each activity includes: type, duration, intensity, calories burned, location
+- Activities are timestamped and categorized
+- User can view activity history with filtering options
+- Real-time calorie calculation based on activity type and duration
 
-**Block 5**: Advanced Patterns & Testing
-- Go: Clean architecture, dependency injection, testing, mocking
-- Flutter: State management (Riverpod+Bloc), testing, navigation
-- Integration: End-to-end testing
-- **Deep Dive**: Design patterns, advanced testing strategies, code quality
+#### Use Case: Step Counting Integration
+**User Story**: As a user, I want my daily steps to be automatically tracked so I can see my overall activity level.
 
-**Block 6**: Authentication & Security
-- Go: JWT tokens, password hashing, middleware, validation, security best practices
-- Flutter: Authentication flow, secure storage, session management
-- Integration: Secure user authentication and authorization
-- **Deep Dive**: Security vulnerabilities, encryption, secure coding practices
+**Acceptance Criteria**:
+- Integration with device step counter (simulated for demo)
+- Daily step goals with progress tracking
+- Weekly and monthly step summaries
+- Achievement badges for step milestones
 
-**Block 7**: WebSockets & gRPC
-- Go: WebSocket servers, gRPC services, Protocol Buffers, streaming APIs
-- Flutter: WebSocket clients, gRPC client integration, real-time updates
-- Integration: Real-time communication and high-performance API calls
-- **Deep Dive**: gRPC streaming, WebSocket scaling, performance optimization
+### 2. Nutrition Management System
 
-**Block 8**: Docker & Production
-- Go: Containerization, environment config, logging, monitoring, performance
-- Flutter: Build optimization, PWA, deployment strategies, analytics
-- Integration: Full production deployment with CI/CD and monitoring
-- **Deep Dive**: Production best practices, scaling, observability
+#### Use Case: Meal Planning & Logging
+**User Story**: As a health-conscious user, I want to plan and log my meals so I can maintain a balanced diet during summer.
 
-## 🛠 Tech Stack
+**Acceptance Criteria**:
+- Add meals with food items, quantities, and nutritional values
+- Search food database with nutritional information
+- Daily calorie tracking with goal setting
+- Water intake tracking with reminders
+- Weekly nutrition reports and insights
 
-- **Backend**: Go 1.24.3+, http, Gin framework, GORM, PostgreSQL, gRPC, Protocol Buffers
-- **Frontend**: Flutter 3.32.1+, Riverpod(Bloc), HTTP client, gRPC client
-- **Infrastructure**: Docker, Docker Compose, GitHub Actions
-- **Database**: PostgreSQL 17.5+, database migrations
-- **Testing**: Go testing, Flutter testing, integration tests
+#### Use Case: Water Intake Tracking
+**User Story**: As a user, I want to track my daily water intake so I can stay hydrated during hot summer days.
 
-## 🚀 Getting Started
+**Acceptance Criteria**:
+- Log water consumption with timestamps
+- Daily water intake goals (customizable)
+- Hydration reminders throughout the day
+- Weekly hydration reports
 
-### Prerequisites
-- Git installed and configured
-- Go 1.24.3+ installed
-- Flutter 3.32.1+ installed
-- Docker and Docker Compose installed
-- PostgreSQL client 
+### 3. Social Wellness Features
 
-### Initial Setup
+#### Use Case: Friend Connections
+**User Story**: As a social user, I want to connect with friends so we can motivate each other and share our health journey.
+
+**Acceptance Criteria**:
+- Send and accept friend requests
+- View friends' public activity feeds
+- Share achievements and milestones
+- Private messaging between friends
+
+#### Use Case: Group Challenges
+**User Story**: As a competitive user, I want to participate in group challenges so I can stay motivated and have fun with friends.
+
+**Acceptance Criteria**:
+- Create and join group challenges
+- Challenge types: step count, workout frequency, nutrition goals
+- Real-time leaderboards
+- Challenge completion rewards and badges
+
+### 4. Progress Analytics & Insights
+
+#### Use Case: Personal Dashboard
+**User Story**: As a user, I want to see my health progress in one place so I can understand my patterns and stay motivated.
+
+**Acceptance Criteria**:
+- Weekly and monthly activity summaries
+- Calorie burn vs. intake charts
+- Progress towards fitness goals
+- Achievement badges and milestones
+- Personalized insights and recommendations
+
+#### Use Case: Goal Setting & Tracking
+**User Story**: As a goal-oriented user, I want to set and track health goals so I can measure my progress and celebrate achievements.
+
+**Acceptance Criteria**:
+- Set SMART goals (Specific, Measurable, Achievable, Relevant, Time-bound)
+- Goal categories: fitness, nutrition, social, wellness
+- Progress tracking with visual indicators
+- Goal completion celebrations and rewards
+
+### 5. Real-time Features
+
+#### Use Case: Live Activity Feed
+**User Story**: As a social user, I want to see my friends' activities in real-time so I can stay connected and motivated.
+
+**Acceptance Criteria**:
+- Real-time activity updates from friends
+- Live notifications for achievements
+- Instant messaging between friends
+- Real-time challenge leaderboards
+
+#### Use Case: Push Notifications
+**User Story**: As a busy user, I want to receive timely reminders so I don't forget to stay active and hydrated.
+
+**Acceptance Criteria**:
+- Hydration reminders throughout the day
+- Workout schedule reminders
+- Goal milestone notifications
+- Friend activity notifications
+- Challenge deadline reminders
+
+---
+
+## 🏗 Technical Architecture
+
+### Microservices Design (4 Services)
+
+#### 1. User Service
+**Responsibilities**:
+- User authentication and authorization
+- Profile management
+- Friend connections
+- Achievement system
+
+**Key Endpoints**:
+```
+POST   /api/users/register
+POST   /api/users/login
+GET    /api/users/profile
+PUT    /api/users/profile
+POST   /api/users/friends/request
+GET    /api/users/friends
+POST   /api/users/achievements
+```
+
+#### 2. Activity Service
+**Responsibilities**:
+- Activity logging and tracking
+- Step counting integration
+- Calorie calculations
+- Activity analytics
+
+**Key Endpoints**:
+```
+POST   /api/activities
+GET    /api/activities
+GET    /api/activities/stats
+POST   /api/activities/steps
+GET    /api/activities/analytics
+```
+
+#### 3. Nutrition Service
+**Responsibilities**:
+- Meal planning and logging
+- Food database management
+- Water intake tracking
+- Nutrition analytics
+
+**Key Endpoints**:
+```
+POST   /api/meals
+GET    /api/meals
+POST   /api/water
+GET    /api/nutrition/stats
+GET    /api/foods/search
+```
+
+#### 4. Social Service
+**Responsibilities**:
+- Real-time messaging
+- Group challenges
+- Social feed
+- Notifications
+
+**Key Endpoints**:
+```
+POST   /api/challenges
+GET    /api/challenges
+POST   /api/messages
+GET    /api/messages
+GET    /api/feed
+```
+
+### Project Setup
 ```bash
-# Fork this repository to your GitHub account
-# Clone your fork
-git clone https://github.com/YOUR_USERNAME/sum25-go-flutter-course.git
+# Clone and setup
+git clone https://github.com/your-username/sum25-go-flutter-course.git
 cd sum25-go-flutter-course
-
-# Install dependencies
 make setup
 
 # Start development environment
 make dev
 ```
 
-## 📋 Submission Workflow
-
-This course uses a **fork-and-merge-request** workflow similar to real software development:
-
-### 1. Fork and Setup
-1. Fork this repository to your GitHub account
-2. Clone your fork locally
-3. Add upstream remote: `git remote add upstream https://github.com/timur-harin/sum25-go-flutter-course.git`
-
-### 2. Lab Submission Process
-1. Create a new branch for each lab: `git checkout -b lab01-surname-name` - all lowercase, no spaces, like in Moodle
-2. Complete the lab requirements in the appropriate `labs/labXX/` directory
-3. Ensure all tests pass: `make test`
-4. Ensure code passes linting: `make lint`
-5. Commit and push your changes
-6. Create a Merge Request to the main repository
-7. Wait for automated CI checks, peer review and instructor review
-
-### 3. Code Review Process
-- **Automated Checks**: CI pipeline runs tests, linting, and builds
-- **Peer Review**: Other students review your code (required)
-- **Instructor Review**: Spot-checks for edge cases and learning objectives
-- **Continuous Integration**: All changes must pass automated tests
-
-## 🏗 Repository Structure
-
-```
-sum25-go-flutter-course/
-├── backend/                    # Go backend source code
-│   ├── cmd/                   # Application entry points
-│   ├── internal/              # Private application code
-│   ├── pkg/                   # Public library code
-│   ├── migrations/            # Database migrations
-│   ├── tests/                 # Integration tests
-│   ├── go.mod                 # Go module definition
-│   └── Dockerfile             # Backend container
-├── frontend/                   # Flutter frontend source code
-│   ├── lib/                   # Dart source code
-│   ├── test/                  # Unit and widget tests
-│   ├── integration_test/      # Integration tests
-│   ├── pubspec.yaml           # Flutter dependencies
-│   └── Dockerfile             # Frontend container
-├── labs/                       # Lab assignments and solutions
-│   ├── labXX/                 # Lab XX 
-│   │   ├── backend/           # Go component
-│   │   ├── frontend/          # Flutter component
-│   │   └── README.md          # Lab instructions
-├── slides/                     # Course presentation materials
-│   ├── lectureXX/             # Lecture XX
-├── .github/                    # GitHub configuration
-│   └── workflows/             # CI/CD pipelines
-├── docs/                       # Additional documentation
-├── scripts/                    # Development scripts
-├── docker-compose.yml          # Local development environment
-├── Makefile                   # Common development tasks
-└── README.md                  # This file
-```
-
-## 🎯 Learning Objectives
-
-By the end of this course, students will be able to:
-- Build and deploy full-stack applications using Go and Flutter
-- Master Go concurrency with goroutines and channels
-- Implement async programming and streams in Flutter
-- Design and implement RESTful APIs with proper architecture
-- Manage databases with migrations and optimization techniques
-- Implement proper testing strategies (unit, integration, E2E)
-- Use version control and collaborative development workflows
-- Apply DevOps practices including containerization and CI/CD
-- Follow software engineering best practices and code review processes
-
-## 📖 Resources
-
-- [Go Documentation](https://golang.org/doc/)
-- [Flutter Documentation](https://flutter.dev/docs)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
-- [Docker Documentation](https://docs.docker.com/)
-- [Course Slides](./slides/)
-
-## 🤝 Contributing
-
-This course encourages collaborative learning:
-- Participate actively in code reviews
-- Suggest improvements to course materials
-- Share useful resources and tips
-
-## 📄 License
-
-This course material is licensed under MIT License - see [LICENSE](LICENSE) for details. 
+### Development Workflow
+1. **Plan Architecture**: Design your microservices
+2. **Implement Core Features**: Start with basic CRUD operations
+3. **Add Real-time Features**: Implement WebSockets and gRPC
+4. **Testing**: Write comprehensive tests
+5. **Deployment**: Containerize and deploy
+6. **Documentation**: Document your implementation
