@@ -6,9 +6,24 @@
 
 ---
 
+## 🛠 Tech Stack
+
+- **Backend**: Go (Gin framework)  
+- **Frontend**: Flutter (Dart)  
+- **Database**: PostgreSQL  
+- **Real-time**: WebSockets  
+- **Containerization**: Docker  
+- **CI/CD**: GitHub Actions  
+- **Deployment**:
+  - **Backend & Database**: Render.com  
+  - **Frontend**: GitHub Pages
+- **Authentication**: JWT  
+
+---
+
 ## 🎯 Project Overview
 
-Build a comprehensive **"Healthy Summer"** wellness application that helps users track their summer health activities, nutrition, fitness goals, and social wellness. This project will demonstrate mastery of all course concepts through a real-world, production-ready application.
+Comprehensive **"Healthy Summer"** wellness application that helps users track their summer health activities, nutrition, fitness goals, and social wellness. This project will demonstrate mastery of all course concepts through a real-world, production-ready application.
 
 ---
 
@@ -200,11 +215,3 @@ make setup
 # Start development environment
 make dev
 ```
-
-### Development Workflow
-1. **Plan Architecture**: Design your microservices
-2. **Implement Core Features**: Start with basic CRUD operations
-3. **Add Real-time Features**: Implement WebSockets and gRPC
-4. **Testing**: Write comprehensive tests
-5. **Deployment**: Containerize and deploy
-6. **Documentation**: Document your implementation
