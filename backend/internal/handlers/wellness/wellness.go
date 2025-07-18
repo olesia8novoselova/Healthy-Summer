@@ -1,9 +1,9 @@
 package wellness
 
 import (
+	"log"
 	"net/http"
 	"time"
-	"log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -11,8 +11,6 @@ import (
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/services"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/pkg/db"
 )
-
-
 
 func PostActivity(c *gin.Context) {
 	userID := c.GetString("userID")
@@ -25,12 +23,12 @@ func PostActivity(c *gin.Context) {
 		return
 	}
 	activity := models.PostActivity{
-    ID:        uuid.NewString(),
-    UserID:    userID,
-    Type:      req.Type,
-    Message:   req.Message,
-    CreatedAt: time.Now(),
-}
+		ID:        uuid.NewString(),
+		UserID:    userID,
+		Type:      req.Type,
+		Message:   req.Message,
+		CreatedAt: time.Now(),
+	}
 
 	// Save to DB
 	_, err := db.DB.Exec(`
@@ -49,16 +47,16 @@ func PostActivity(c *gin.Context) {
 }
 
 func GetFriendsActivities(c *gin.Context) {
-    userID := c.GetString("userID")
-    friendIDs, _ := services.User.GetFriendIDs(userID)
-    activities, err := services.Post.GetFriendsActivities(userID, friendIDs, 10)
-    if err != nil {
+	userID := c.GetString("userID")
+	friendIDs, _ := services.User.GetFriendIDs(userID)
+	activities, err := services.Post.GetFriendsActivities(userID, friendIDs, 10)
+	if err != nil {
 		log.Printf("Failed to get friends activities: %v", err)
-        c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot load activities"})
-        return
-    }
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "cannot load activities"})
+		return
+	}
 	if activities == nil {
 		activities = []models.PostActivity{}
 	}
-    c.JSON(http.StatusOK, activities)
+	c.JSON(http.StatusOK, activities)
 }

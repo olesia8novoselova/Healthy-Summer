@@ -17,18 +17,18 @@ import (
 
 // ProfileUpdateInput matches your JSON input for updating profile.
 type ProfileUpdateInput struct {
-	Name  string `json:"name"`
-	AvatarURL string `json:"avatarUrl"`
-	Weight *float64 `json:"weight"`
-	Height *float64 `json:"height"`
+	Name      string   `json:"name"`
+	AvatarURL string   `json:"avatarUrl"`
+	Weight    *float64 `json:"weight"`
+	Height    *float64 `json:"height"`
 }
 
 // UserProfile is what you return to the client.
 type UserProfile struct {
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Email     string `json:"email"`
-	AvatarURL string `json:"avatarUrl"`
+	ID        string   `json:"id"`
+	Name      string   `json:"name"`
+	Email     string   `json:"email"`
+	AvatarURL string   `json:"avatarUrl"`
 	Weight    *float64 `json:"weight"`
 	Height    *float64 `json:"height"`
 }
@@ -54,12 +54,38 @@ type ActivityStats struct {
 	Duration float64 `json:"duration"`
 }
 
+type UserService interface {
+	CreateUser(name, email, pass string) (string, error)
+	Authenticate(email, pass string) (string, error)
+	GetProfile(userID string) (UserProfile, error)
+	UpdateProfile(userID string, in ProfileUpdateInput) error
+	SendFriendRequest(userID, friendEmail string) error
+	ListFriends(userID string) ([]Friend, error)
+	AcceptFriendRequest(userID, requestID string) error
+	DeclineFriendRequest(userID, requestID string) error
+	ListPendingFriendRequests(userID string) ([]Friend, error)
+	GetFriendIDs(userID string) ([]string, error)
+	ListUnlockedAchievements(userID string) ([]Achievement, error)
+	ListAllAchievements() ([]Achievement, error)
+	AwardAchievementToUserID(userID, title string) error
+
+	AddActivity(userID, activityType, name string, duration int, intensity string, calories int, location string) error
+	ListActivities(userID string, filterType *string) ([]models.Activity, error)
+
+	SetActivityGoal(userID string, goal int) error
+	GetActivityGoal(userID string) (int, error)
+	GetTodayCalories(userID string) (int, error)
+	GetWeeklyStats(userID string) ([]ActivityStats, error)
+
+	IDByEmail(email string) (string, error)
+}
+
 // userService holds the DB handle.
 type userService struct {
 }
 
 // User is the exported singleton service.
-var User = &userService{}
+var User UserService = &userService{}
 
 // CreateUser inserts a new user (with hashed password) into the DB.
 func (u *userService) CreateUser(name, email, pass string) (string, error) {
@@ -175,100 +201,100 @@ func (u *userService) ListFriends(userID string) ([]Friend, error) {
 
 // List only unlocked achievements for the user
 func (u *userService) ListUnlockedAchievements(userID string) ([]Achievement, error) {
-    var achievements []Achievement
-    err := db.DB.Select(&achievements, `
+	var achievements []Achievement
+	err := db.DB.Select(&achievements, `
         SELECT a.id, a.title, true as unlocked
         FROM achievements a
         JOIN user_achievements ua ON a.id = ua.achievement_id
         WHERE ua.user_id = $1
     `, userID)
-    return achievements, err
+	return achievements, err
 }
 
 // List all possible achievements (for the "all achievements" page)
 func (u *userService) ListAllAchievements() ([]Achievement, error) {
-    var achievements []Achievement
-    err := db.DB.Select(&achievements, `
+	var achievements []Achievement
+	err := db.DB.Select(&achievements, `
         SELECT a.id, a.title, false as unlocked
         FROM achievements a
     `)
-    return achievements, err
+	return achievements, err
 }
 
 func (u *userService) AwardAchievementToUserID(userID, title string) error {
-    var achID string
-    err := db.DB.Get(&achID, `SELECT id FROM achievements WHERE title = $1`, title)
-    if err != nil {
-        return err
-    }
-    // Check if already awarded to avoid duplicate
-    var exists bool
-    err = db.DB.Get(&exists, `SELECT EXISTS (
+	var achID string
+	err := db.DB.Get(&achID, `SELECT id FROM achievements WHERE title = $1`, title)
+	if err != nil {
+		return err
+	}
+	// Check if already awarded to avoid duplicate
+	var exists bool
+	err = db.DB.Get(&exists, `SELECT EXISTS (
         SELECT 1 FROM user_achievements WHERE user_id = $1 AND achievement_id = $2
     )`, userID, achID)
-    if err == nil && exists {
-        return nil 
-    }
-    // Insert award
-    _, err = db.DB.Exec(`
+	if err == nil && exists {
+		return nil
+	}
+	// Insert award
+	_, err = db.DB.Exec(`
         INSERT INTO user_achievements (user_id, achievement_id)
         VALUES ($1, $2)
     `, userID, achID)
-    return err
+	return err
 }
 
 func (s *userService) AddActivity(userID, activityType string, name string, duration int, intensity string, calories int, location string) error {
-    _, err := db.DB.Exec(`
+	_, err := db.DB.Exec(`
         INSERT INTO activities (user_id, type, name, duration, intensity, calories, location)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
     `, userID, activityType, name, duration, intensity, calories, location)
-    return err
+	return err
 }
 
 func (s *userService) ListActivities(userID string, filterType *string) ([]models.Activity, error) {
-    var activities []models.Activity
-    query := `SELECT * FROM activities WHERE user_id = $1`
-    args := []interface{}{userID}
-    if filterType != nil {
-        query += ` AND type = $2`
-        args = append(args, *filterType)
-    }
-    query += ` ORDER BY performed_at DESC`
-    err := db.DB.Select(&activities, query, args...)
-    return activities, err
+	var activities []models.Activity
+	query := `SELECT * FROM activities WHERE user_id = $1`
+	args := []interface{}{userID}
+	if filterType != nil {
+		query += ` AND type = $2`
+		args = append(args, *filterType)
+	}
+	query += ` ORDER BY performed_at DESC`
+	err := db.DB.Select(&activities, query, args...)
+	return activities, err
 }
 
 func (s *userService) SetActivityGoal(userID string, goal int) error {
-  _, err := db.DB.Exec(`
+	_, err := db.DB.Exec(`
     INSERT INTO activity_goals (user_id, goal)
     VALUES ($1, $2)
     ON CONFLICT (user_id) DO UPDATE SET goal = EXCLUDED.goal, updated_at = now()
   `, userID, goal)
-  return err
+	return err
 }
 
 func (s *userService) GetActivityGoal(userID string) (int, error) {
-  var goal int
-  err := db.DB.Get(&goal, `SELECT goal FROM activity_goals WHERE user_id = $1`, userID)
-  if err != nil {
-    return 500, nil
-  }
-  return goal, nil
+	var goal int
+	err := db.DB.Get(&goal, `SELECT goal FROM activity_goals WHERE user_id = $1`, userID)
+	if err != nil {
+		return 500, nil
+	}
+	return goal, nil
 }
 
 func (s *userService) GetTodayCalories(userID string) (int, error) {
-  var total int
-  err := db.DB.Get(&total, `
+	var total int
+	err := db.DB.Get(&total, `
     SELECT COALESCE(SUM(calories), 0)
     FROM activities
     WHERE user_id = $1
       AND DATE(performed_at) = CURRENT_DATE
   `, userID)
 
-  if err != nil {
-    return 0, err
-  }
-  return total, nil
+	if err != nil {
+		return 0, err
+	}
+	return total, nil
 }
 
 func (s *userService) GetWeeklyStats(userID string) ([]ActivityStats, error) {
@@ -347,8 +373,7 @@ func (u *userService) GetFriendIDs(userID string) ([]string, error) {
 }
 
 func (s *userService) IDByEmail(email string) (string, error) {
-    var id string
-    err := db.DB.Get(&id, `SELECT id FROM users WHERE email=$1`, email)
-    return id, err
+	var id string
+	err := db.DB.Get(&id, `SELECT id FROM users WHERE email=$1`, email)
+	return id, err
 }
-

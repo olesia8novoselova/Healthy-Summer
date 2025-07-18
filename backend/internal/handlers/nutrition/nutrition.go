@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/timur-harin/sum25-go-flutter-course/backend/internal/services"
 )
+
 type waterLogRequest struct {
 	Amount int `json:"amount"`
 }
@@ -25,7 +26,7 @@ func AddMeal(c *gin.Context) {
 
 	if err := services.Challenge.BumpProgress(userID, "calories", int(req.Calories)); err != nil {
 		log.Printf("[Challenge] bump kcal: %v", err)
-    }
+	}
 
 	c.Status(http.StatusOK)
 }
@@ -54,11 +55,11 @@ func GetNutritionStats(c *gin.Context) {
 }
 
 func GetWeeklyNutritionStats(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
+	userID := c.GetString("userID")
 
 	stats, err := services.Nutrition.GetWeeklyNutritionStats(userID)
 	if err != nil {
-		log.Println("Weekly stats error:", err) 
+		log.Println("Weekly stats error:", err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get weekly stats"})
 		return
 	}
@@ -66,7 +67,7 @@ func GetWeeklyNutritionStats(c *gin.Context) {
 }
 
 func AddWaterLog(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
+	userID := c.GetString("userID")
 
 	var req waterLogRequest
 	if err := c.ShouldBindJSON(&req); err != nil || req.Amount <= 0 {
@@ -82,7 +83,7 @@ func AddWaterLog(c *gin.Context) {
 }
 
 func GetTodayWaterStats(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
+	userID := c.GetString("userID")
 	stats, err := services.Nutrition.GetTodayWaterStats(userID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to get water stats"})
@@ -92,13 +93,12 @@ func GetTodayWaterStats(c *gin.Context) {
 }
 
 func GetWeeklyWaterStats(c *gin.Context) {
-	userIDRaw, exists := c.Get("userID")
+	raw, exists := c.Get("userID")
 	if !exists {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized: userID missing"})
 		return
 	}
-
-	userID, ok := userIDRaw.(string)
+	userID, ok := raw.(string)
 	if !ok || userID == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized: invalid userID"})
 		return
@@ -113,7 +113,7 @@ func GetWeeklyWaterStats(c *gin.Context) {
 }
 
 func SetWaterGoal(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
+	userID := c.GetString("userID")
 	var input struct {
 		GoalML int `json:"goal_ml"`
 	}
@@ -130,7 +130,7 @@ func SetWaterGoal(c *gin.Context) {
 }
 
 func GetWaterGoal(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
+	userID := c.GetString("userID")
 	goal, err := services.Nutrition.GetWaterGoal(userID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to get goal"})
@@ -140,7 +140,7 @@ func GetWaterGoal(c *gin.Context) {
 }
 
 func SetCalorieGoal(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
+	userID := c.GetString("userID")
 	var input struct {
 		Goal int `json:"goal"`
 	}
@@ -157,7 +157,7 @@ func SetCalorieGoal(c *gin.Context) {
 }
 
 func GetCalorieGoal(c *gin.Context) {
-	userID := c.MustGet("userID").(string)
+	userID := c.GetString("userID")
 	goal, err := services.Nutrition.GetCalorieGoal(userID)
 	if err != nil {
 		c.JSON(500, gin.H{"error": "Failed to get goal"})
@@ -165,4 +165,3 @@ func GetCalorieGoal(c *gin.Context) {
 	}
 	c.JSON(200, gin.H{"goal": goal})
 }
-

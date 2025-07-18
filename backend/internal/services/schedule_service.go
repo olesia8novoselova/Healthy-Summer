@@ -92,7 +92,7 @@ func (s *scheduleService) fireWorkout(now time.Time) error {
 
 	// Monday = 0 … Sunday = 6 (client sends the same index)
 	weekday := int(now.Weekday()+6) % 7
-	cur     := now.Format("15:04") // e.g. "18:30"
+	cur := now.Format("15:04") // e.g. "18:30"
 
 	var rows []struct {
 		UserID string `db:"user_id"`
@@ -127,7 +127,6 @@ func (s *scheduleService) fireWorkout(now time.Time) error {
 	}
 	return nil
 }
-
 
 func (s *scheduleService) fireHydration(now time.Time) {
 	dbx := s.conn()

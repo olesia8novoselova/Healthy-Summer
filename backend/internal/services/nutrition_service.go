@@ -7,6 +7,20 @@ import (
 	"github.com/timur-harin/sum25-go-flutter-course/backend/pkg/db"
 )
 
+type NutritionService interface {
+	AddMeal(userID string, meal Meal) error
+	ListMeals(userID string) ([]Meal, error)
+	GetNutritionStats(userID string) (NutritionStats, error)
+	GetWeeklyNutritionStats(userID string) ([]NutritionStats, error)
+	AddWaterLog(userID string, amount int) error
+	GetTodayWaterStats(userID string) (DailyWaterStats, error)
+	GetWeeklyWaterStats(userID string) ([]DailyWaterStats, error)
+	SetWaterGoal(userID string, goalML int) error
+	GetWaterGoal(userID string) (int, error)
+	SetCalorieGoal(userID string, goal int) error
+	GetCalorieGoal(userID string) (int, error)
+}
+
 type Meal struct {
 	ID          string    `db:"id" json:"id"`
 	UserID      string    `db:"user_id" json:"user_id"`
@@ -43,10 +57,9 @@ type DailyWaterStats struct {
 	GoalML  int    `db:"goal_ml" json:"goal_ml"`
 }
 
-
 type nutritionService struct{}
 
-var Nutrition = &nutritionService{}
+var Nutrition NutritionService = &nutritionService{}
 
 func (s *nutritionService) AddMeal(userID string, meal Meal) error {
 	_, err := db.DB.Exec(`

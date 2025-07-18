@@ -26,19 +26,19 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-    log.Println("No .env file found, relying on real environment")
-}
+		log.Println("No .env file found, relying on real environment")
+	}
 	// Load configuration
 	cfg := config.Load()
 	if err := db.Init(cfg); err != nil {
-    	log.Fatalf("DB init failed: %v", err)
+		log.Fatalf("DB init failed: %v", err)
 	}
 
 	// Initialize Gin router
 	if cfg.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
-	services.Schedule.StartTicker() 
+	services.Schedule.StartTicker()
 
 	router := gin.New()
 
@@ -73,7 +73,7 @@ func main() {
 			users.POST("/friends/requests/:id/decline", user.DeclineFriendRequest)
 
 		}
-		
+
 		activities := api.Group("/activities")
 		{
 			activities.Use(middleware.Auth())

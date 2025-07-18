@@ -78,7 +78,7 @@ func ListFriendRequests(c *gin.Context) {
 	}
 	log.Println("Returning", len(list), "friend requests")
 	if list == nil {
-    c.JSON(http.StatusOK, []Friend{})
+		c.JSON(http.StatusOK, []Friend{})
 	} else {
 		c.JSON(http.StatusOK, list)
 	}

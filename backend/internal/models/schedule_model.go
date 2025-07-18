@@ -10,7 +10,7 @@ type WorkoutSchedule struct {
 	ID        string    `db:"id"         json:"id"`
 	UserID    string    `db:"user_id"    json:"user_id"`
 	Weekday   int       `db:"weekday"    json:"weekday"`
-	AtTime    string    `db:"at_time"    json:"time"`   // "18:30:00"
+	AtTime    string    `db:"at_time"    json:"time"` // "18:30:00"
 	Title     string    `db:"title"      json:"title"`
 	CreatedAt time.Time `db:"created_at" json:"created_at"`
 }

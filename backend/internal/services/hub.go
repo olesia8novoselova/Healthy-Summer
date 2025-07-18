@@ -53,18 +53,17 @@ func (h *Hub) Broadcast(msg ActivityMessage) {
 }
 
 func (h *Hub) run() {
-    for msg := range h.broadcastCh {
-        h.mu.RLock()
-        for _, uid := range msg.RecipientIDs {
-            for conn := range h.clients[uid] {
-                log.Printf("[Hub] Sending message to %v: %+v", uid, msg.Data)
-                err := conn.WriteJSON(msg.Data)
-                if err != nil {
-                    log.Printf("[Hub] ERROR writing to %v: %v", uid, err)
-                }
-            }
-        }
-        h.mu.RUnlock()
-    }
+	for msg := range h.broadcastCh {
+		h.mu.RLock()
+		for _, uid := range msg.RecipientIDs {
+			for conn := range h.clients[uid] {
+				log.Printf("[Hub] Sending message to %v: %+v", uid, msg.Data)
+				err := conn.WriteJSON(msg.Data)
+				if err != nil {
+					log.Printf("[Hub] ERROR writing to %v: %v", uid, err)
+				}
+			}
+		}
+		h.mu.RUnlock()
+	}
 }
-
