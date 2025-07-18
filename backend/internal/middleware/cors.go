@@ -1,33 +1,43 @@
 package middleware
 
-import "github.com/gin-gonic/gin"
+import (
+	"net/http"
 
-// CORS handles Cross-Origin Resource Sharing, including auth headers.
+	"github.com/gin-gonic/gin"
+)
+
+// CORS handles Cross-Origin Resource Sharing, including credentials.
 func CORS() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		origin := c.GetHeader("Origin")
+
 		if origin != "" {
-			// Echo back the requesting origin instead of "*"
 			c.Writer.Header().Set("Access-Control-Allow-Origin", origin)
 			c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+			c.Writer.Header().Set("Vary", "Origin") // cache correctness
 		} else {
-			// Fallback if no Origin header
-			c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-		}
-
-		c.Writer.Header().Set(
-			"Access-Control-Allow-Headers",
-			"Content-Type, Authorization, X-CSRF-Token, X-Requested-With, Accept, Origin, Cache-Control, Content-Length",
-		)
-		c.Writer.Header().Set(
-			"Access-Control-Allow-Methods",
-			"GET, POST, PUT, PATCH, DELETE, OPTIONS",
-		)
-
-		if c.Request.Method == "OPTIONS" {
-			c.AbortWithStatus(204)
+			// No Origin header → treat as same-origin call, or tighten policy.
+			// You could simply fall through without CORS headers.
+			c.AbortWithStatus(403)
 			return
 		}
+
+		c.Writer.Header().Set("Access-Control-Allow-Headers",
+			"Authorization, Content-Type, X-CSRF-Token, X-Requested-With, Accept, Origin, Cache-Control, Content-Length",
+		)
+		c.Writer.Header().Set("Access-Control-Allow-Methods",
+			"GET, POST, PUT, PATCH, DELETE, OPTIONS",
+		)
+		c.Writer.Header().Set("Access-Control-Max-Age", "3600")
+		c.Writer.Header().Set("Access-Control-Expose-Headers",
+			"Content-Length, Content-Disposition, X-Total-Count",
+		)
+
+		if c.Request.Method == http.MethodOptions {
+			c.AbortWithStatus(204) // pre-flight OK
+			return
+		}
+
 		c.Next()
 	}
 }
