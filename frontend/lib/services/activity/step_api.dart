@@ -6,10 +6,13 @@ import 'package:sum25_flutter_frontend/config.dart';
 class StepApi {
   static const String baseUrl = '$activityBase';
 
+  final http.Client _client;
+  StepApi({http.Client? client}) : _client = client ?? http.Client();
+
   Future<void> addSteps(int steps) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final resp = await http.post(
+    final resp = await _client.post(
       Uri.parse('$baseUrl/steps'),
       headers: {
         'Content-Type': 'application/json',
@@ -25,7 +28,7 @@ class StepApi {
   Future<Map<String, dynamic>> fetchStepStats() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final resp = await http.get(
+    final resp = await _client.get(
       Uri.parse('$baseUrl/stats'),
       headers: {
         'Content-Type': 'application/json',
@@ -42,7 +45,7 @@ class StepApi {
   Future<List<Map<String, dynamic>>> fetchStepHistory({int days = 30}) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final resp = await http.get(
+    final resp = await _client.get(
       Uri.parse('$baseUrl/analytics?days=$days'),
       headers: {
         'Content-Type': 'application/json',

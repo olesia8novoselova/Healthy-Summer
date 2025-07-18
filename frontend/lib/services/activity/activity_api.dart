@@ -7,6 +7,9 @@ import 'package:sum25_flutter_frontend/models/activity.dart';
 class ActivityApi {
   final String baseUrl = '$activityBase';
 
+  final http.Client _client;
+  ActivityApi({http.Client? client}) : _client = client ?? http.Client();
+
   Future<void> addActivity({
     required String type,
     required String name,
@@ -17,7 +20,7 @@ class ActivityApi {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final resp = await http.post(
+    final resp = await _client.post(
       Uri.parse('$baseUrl'),
       headers: {
         'Content-Type': 'application/json',
@@ -43,7 +46,7 @@ class ActivityApi {
     final url = type == null
         ? '$baseUrl'
         : '$baseUrl?type=$type';
-    final resp = await http.get(
+    final resp = await _client.get(
       Uri.parse(url),
       headers: {
         'Content-Type': 'application/json',
@@ -67,7 +70,7 @@ class ActivityApi {
     final token = prefs.getString('jwt_token');
     if (token == null) throw Exception('Not authenticated');
 
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl$path'),
       headers: {
         'Authorization': 'Bearer $token',

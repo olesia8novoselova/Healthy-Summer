@@ -7,8 +7,11 @@ import 'package:sum25_flutter_frontend/config.dart';
 class AuthApi {
   static const String baseUrl = '$usersBase';
 
+  final http.Client _client;
+  AuthApi({http.Client? client}) : _client = client ?? http.Client(); 
+
   Future<String> login(String email, String password) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/login'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
@@ -24,7 +27,7 @@ class AuthApi {
   }
 
   Future<String> register(String name, String email, String password) async {
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/register'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'name': name, 'email': email, 'password': password}),

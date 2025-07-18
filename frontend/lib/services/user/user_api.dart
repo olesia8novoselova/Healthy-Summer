@@ -10,11 +10,14 @@ import '../../models/achievement.dart';
 class UserApi {
   static const String baseUrl = '$usersBase';
 
+  final http.Client _client;
+  UserApi({http.Client? httpClient}) : _client = httpClient ?? http.Client();
+
   Future<Map<String, dynamic>> fetchProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
     if (token == null) throw Exception('Not authenticated');
-    final response = await http.get(
+    final response = await _client.get(
       Uri.parse('$baseUrl/profile'),
       headers: {
         'Content-Type': 'application/json',
@@ -41,7 +44,7 @@ class UserApi {
     Future<List<Friend>> fetchFriends() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final resp = await http.get(
+    final resp = await _client.get(
       Uri.parse('$baseUrl/friends'),
       headers: {
         'Content-Type': 'application/json',
@@ -61,7 +64,7 @@ class UserApi {
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final resp = await http.get(
+    final resp = await _client.get(
       Uri.parse('$baseUrl/achievements'),
       headers: {
         'Content-Type': 'application/json',
@@ -81,7 +84,7 @@ class UserApi {
   print('Fetching user achievements...');
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  final resp = await http.get(
+  final resp = await _client.get(
     Uri.parse('$baseUrl/users/achievements'),
     headers: {
       'Content-Type': 'application/json',
@@ -100,7 +103,7 @@ class UserApi {
   Future<void> sendFriendRequest(String friendEmail) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final response = await http.post(
+    final response = await _client.post(
       Uri.parse('$baseUrl/friends/request'),
       headers: {
         'Content-Type': 'application/json',
@@ -116,7 +119,7 @@ class UserApi {
   Future<void> updateProfile(String name, String avatarUrl, double? weight, double? height) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final resp = await http.put(
+    final resp = await _client.put(
       Uri.parse('$baseUrl/profile'),
       headers: {
         'Content-Type': 'application/json',
@@ -139,7 +142,7 @@ class UserApi {
   final token = prefs.getString('jwt_token');
   if (token == null) throw Exception('Not authenticated');
   
-  final resp = await http.get(
+  final resp = await _client.get(
     Uri.parse('$baseUrl/friends/requests'),
     headers: {
       'Content-Type': 'application/json',
@@ -162,7 +165,7 @@ class UserApi {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   if (token == null) throw Exception('Not authenticated');
-  final resp = await http.post(
+  final resp = await _client.post(
     Uri.parse('$baseUrl/friends/requests/$requestId/accept'),
     headers: {
       'Content-Type': 'application/json',
@@ -181,7 +184,7 @@ Future<void> declineFriendRequest(String requestId) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   if (token == null) throw Exception('Not authenticated');
-  final resp = await http.post(
+  final resp = await _client.post(
     Uri.parse('$baseUrl/friends/requests/$requestId/decline'),
     headers: {
       'Content-Type': 'application/json',

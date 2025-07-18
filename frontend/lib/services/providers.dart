@@ -1,4 +1,3 @@
-// providers.dart
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -6,25 +5,30 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 import 'package:sum25_flutter_frontend/config.dart';
 import 'package:sum25_flutter_frontend/models/activity.dart';
+import 'package:sum25_flutter_frontend/models/achievement.dart';
 import 'package:sum25_flutter_frontend/models/challenge.dart';
 import 'package:sum25_flutter_frontend/models/food_item.dart';
+import 'package:sum25_flutter_frontend/models/friend.dart';
 import 'package:sum25_flutter_frontend/models/friend_request.dart';
 import 'package:sum25_flutter_frontend/models/meal.dart';
 import 'package:sum25_flutter_frontend/models/message.dart';
 import 'package:sum25_flutter_frontend/models/post_activity.dart';
 import 'package:sum25_flutter_frontend/services/activity/activity_api.dart';
+import 'package:sum25_flutter_frontend/services/activity/step_api.dart';
 import 'package:sum25_flutter_frontend/services/nutrition/nutrition_api.dart';
 import 'package:sum25_flutter_frontend/services/wellness/challenge_api.dart';
 import 'package:sum25_flutter_frontend/services/wellness/chat_api.dart';
 import 'package:sum25_flutter_frontend/services/wellness/wellness_api.dart';
+import 'package:collection/collection.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import '../models/achievement.dart';
-import '../models/friend.dart';
+
 import 'user/auth_api.dart';
 import 'user/user_api.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'activity/step_api.dart';
-import 'package:collection/collection.dart';
+
+// ════════════════════════════════════════════════════════════════════
+//  AUTH & USER PROFILE
+// ════════════════════════════════════════════════════════════════════
 
 class AuthProvider extends ChangeNotifier {
   final _authApi = AuthApi();
@@ -76,321 +80,108 @@ class AuthProvider extends ChangeNotifier {
 
 final userApiProvider = Provider((ref) => UserApi());
 
-final friendsProvider = FutureProvider<List<Friend>>((ref) async {
-  return ref.read(userApiProvider).fetchFriends();
-});
+// ════════════════════════════════════════════════════════════════════
+//  SOCIAL: FRIENDS & ACHIEVEMENTS
+// ════════════════════════════════════════════════════════════════════
 
-final friendRequestsProvider = FutureProvider<List<FriendRequest>>((ref) async {
-  return ref.read(userApiProvider).fetchFriendRequests();
-});
+final friendsProvider = FutureProvider<List<Friend>>(
+    (ref) => ref.read(userApiProvider).fetchFriends());
 
-final achievementsProvider = FutureProvider<List<Achievement>>((ref) async {
-  final api = ref.read(userApiProvider);
-  return api.fetchAchievements();
-});
+final friendRequestsProvider = FutureProvider<List<FriendRequest>>(
+    (ref) => ref.read(userApiProvider).fetchFriendRequests());
 
-final userAchievementsProvider = FutureProvider<List<Achievement>>((ref) async {
-  final userApi = ref.read(userApiProvider);
-  return userApi.fetchUserAchievements();
-});
+final achievementsProvider = FutureProvider<List<Achievement>>(
+    (ref) => ref.read(userApiProvider).fetchAchievements());
+
+final userAchievementsProvider = FutureProvider<List<Achievement>>(
+    (ref) => ref.read(userApiProvider).fetchUserAchievements());
+
+// ════════════════════════════════════════════════════════════════════
+//  ACTIVITY & STEPS
+// ════════════════════════════════════════════════════════════════════
 
 final activityApiProvider = Provider((ref) => ActivityApi());
 
-final activitiesProvider = FutureProvider.family<List<Activity>, String?>((ref, type) {
+final activitiesProvider =
+    FutureProvider.family<List<Activity>, String?>((ref, type) {
   return ref.read(activityApiProvider).fetchActivities(type: type);
 });
 
 final stepApiProvider = Provider((ref) => StepApi());
 
-final stepStatsProvider = FutureProvider((ref) =>
-    ref.watch(stepApiProvider).fetchStepStats());
+final stepStatsProvider =
+    FutureProvider((ref) => ref.watch(stepApiProvider).fetchStepStats());
 
-final stepHistoryProvider = FutureProvider.family((ref, int days) =>
-    ref.watch(stepApiProvider).fetchStepHistory(days: days));
+final stepHistoryProvider =
+    FutureProvider.family((ref, int days) => ref.watch(stepApiProvider).fetchStepHistory(days: days));
 
-
-
-final foodSearchProvider = FutureProvider.family<List<FoodItem>, String>((ref, query) async {
-  if (query.isEmpty) return [];
-
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  final resp = await http.get(
-    Uri.parse('$nutritionBase/foods/search?q=$query'),
-    headers: {
-      if (token != null) 'Authorization': 'Bearer $token',
-    },
-  );
-
-  if (resp.statusCode == 200) {
-    final data = jsonDecode(resp.body);
-
-    final foodsList = data['foods'] as List;
-    return foodsList.map((e) => FoodItem.fromJson(e)).toList();
-  } else {
-    throw Exception('Failed to search foods (${resp.statusCode})');
-  }
-});
-
-final mealsProvider = FutureProvider<List<Meal>>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-  final resp = await http.get(
-    Uri.parse('$nutritionBase/meals'),
-    headers: {'Authorization': 'Bearer $token'}
-  );
-  if (resp.statusCode == 200) {
-    final data = jsonDecode(resp.body);
-    if (data == null) return [];
-    return (data as List).map((e) => Meal.fromJson(e)).toList();
-  }
-  throw Exception('Failed to fetch meals');
-});
-
-
-final nutritionStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-  final resp = await http.get(
-    Uri.parse('$nutritionBase/stats'),
-    headers: {'Authorization': 'Bearer $token'}
-  );
-  if (resp.statusCode == 200) return jsonDecode(resp.body);
-  throw Exception('Failed to fetch stats');
-});
-
-final mealApiProvider = Provider((ref) => NutritionApi());
-
-final weeklyNutritionStatsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  final resp = await http.get(
-    Uri.parse('$nutritionBase/stats/weekly'),
-    headers: {'Authorization': 'Bearer $token'},
-  );
-
-  print('Weekly nutrition raw body: ${resp.body}');
-
-  if (resp.statusCode == 200) {
-    final body = jsonDecode(resp.body);
-    if (body is List) {
-      return List<Map<String, dynamic>>.from(body);
-    } else {
-      return []; 
-    }
-  }
-
-  throw Exception('Failed to fetch weekly nutrition');
-});
-
-
-final todayWaterProvider = FutureProvider<Map<String, dynamic>>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-  final resp = await http.get(
-    Uri.parse('$nutritionBase/water/today'),
-    headers: {'Authorization': 'Bearer $token'},
-  );
-  if (resp.statusCode == 200) return jsonDecode(resp.body);
-  throw Exception('Failed to fetch water stats');
-});
-
-final weeklyWaterProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-  final resp = await http.get(
-    Uri.parse('$nutritionBase/water/weekly'),
-    headers: {'Authorization': 'Bearer $token'},
-  );
-
-  if (resp.statusCode == 200) {
-    final decoded = jsonDecode(resp.body);
-    
-    if (decoded == null) return [];
-    if (decoded is List) {
-      return List<Map<String, dynamic>>.from(decoded);
-    }
-
-    throw Exception('Expected a list but got ${decoded.runtimeType}');
-  }
-
-  throw Exception('Failed to fetch weekly water');
-});
-
-final setWaterGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  final response = await http.post(
-    Uri.parse('$nutritionBase/water/goal'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({'goal_ml': goal}),
-  );
-
-  if (response.statusCode != 200) {
-    throw Exception('Failed to set water goal');
-  }
-});
-
-final waterGoalProvider = FutureProvider<int>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  final response = await http.get(
-    Uri.parse('$nutritionBase/water/goal'),
-    headers: {'Authorization': 'Bearer $token'},
-  );
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return data['goal_ml'];
-  } else {
-    throw Exception('Failed to get water goal');
-  }
-});
-
-
-final setCalorieGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  final response = await http.post(
-    Uri.parse('$nutritionBase/calories/goal'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({'goal': goal}),
-  );
-
-  if (response.statusCode != 200) {
-    throw Exception('Failed to set calorie goal');
-  }
-});
-
-final calorieGoalProvider = FutureProvider<int>((ref) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-
-  final response = await http.get(
-    Uri.parse('$nutritionBase/calories/goal'),
-    headers: {'Authorization': 'Bearer $token'},
-  );
-
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return data['goal'];
-  } else {
-    throw Exception('Failed to get calorie goal');
-  }
-});
+// ─── Goals & Daily / Weekly Activity ─────────────────────────────────
 
 final stepGoalProvider = FutureProvider<int>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  final response = await http.get(
-    Uri.parse('$activityBase/steps/goal'),
-    headers: {'Authorization': 'Bearer $token'},
-  );
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return data['goal'];
-  } else {
-    throw Exception('Failed to get step goal');
-  }
+  final response =
+      await http.get(Uri.parse('$activityBase/steps/goal'), headers: {'Authorization': 'Bearer $token'});
+  if (response.statusCode == 200) return jsonDecode(response.body)['goal'];
+  throw Exception('Failed to get step goal');
 });
 
 final setStepGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  final response = await http.post(
-    Uri.parse('$activityBase/steps/goal'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({'goal': goal}),
-  );
-  if (response.statusCode != 200) {
-    throw Exception('Failed to set step goal');
-  }
+  final response = await http.post(Uri.parse('$activityBase/steps/goal'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'goal': goal}));
+  if (response.statusCode != 200) throw Exception('Failed to set step goal');
 });
 
 final activityGoalProvider = FutureProvider<int>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  final res = await http.get(
-    Uri.parse('$activityBase/goal'),
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
+  final res = await http.get(Uri.parse('$activityBase/goal'), headers: {'Authorization': 'Bearer $token'});
   if (res.statusCode != 200) throw Exception('Failed to load activity goal');
-  final body = jsonDecode(res.body);
-  return body['goal'] ?? 500;
+  return jsonDecode(res.body)['goal'] ?? 500;
 });
 
 final setActivityGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  final res = await http.post(
-    Uri.parse('$activityBase/goal'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({'goal': goal}),
-  );
-  if (res.statusCode != 200) throw Exception('Failed to set activity goal');
+  final res = await http.post(Uri.parse('$activityBase/goal'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'goal': goal}));
+  if (res.statusCode != 0 && res.statusCode != 200) throw Exception('Failed to set activity goal');
 });
 
 final todayActivityCaloriesProvider = FutureProvider<int>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  final res = await http.get(
-    Uri.parse('$activityBase/today-calories'),
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
+  final res =
+      await http.get(Uri.parse('$activityBase/today-calories'), headers: {'Authorization': 'Bearer $token'});
   if (res.statusCode != 200) throw Exception('Failed to fetch today\'s calories');
-  final body = jsonDecode(res.body);
-  return body['calories'] ?? 0;
+  return jsonDecode(res.body)['calories'] ?? 0;
 });
 
 final weeklyActivityStatsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
-  
-  final res = await http.get(
-    Uri.parse('$activityBase/activity/weekly'),
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
-
+  final res =
+      await http.get(Uri.parse('$activityBase/activity/weekly'), headers: {'Authorization': 'Bearer $token'});
   if (res.statusCode != 200) throw Exception('Failed to fetch weekly stats');
-
   final decoded = jsonDecode(res.body);
-  if (decoded is List) {
-    return List<Map<String, dynamic>>.from(decoded);
-  }
+  if (decoded is List) return List<Map<String, dynamic>>.from(decoded);
   if (decoded is Map && decoded['days'] is List) {
     return List<Map<String, dynamic>>.from(decoded['days']);
   }
   throw Exception('Unexpected payload for weekly activity stats: ${decoded.runtimeType}');
 });
 
-final wellnessApiProvider = Provider((ref) => WellnessApi());
-
-final friendActivitiesProvider = FutureProvider<List<PostActivity>>((ref) async {
-  return ref.read(wellnessApiProvider).fetchFriendActivities();
-});
+// ─── Goal-achievement helpers ───────────────────────────────────────
 
 final goalNotifiedProvider = StateProvider<bool>((ref) => false);
 
@@ -403,32 +194,140 @@ final activityGoalReachedProvider = Provider<bool>((ref) {
 final stepGoalReachedProvider = Provider<bool>((ref) {
   final goal = ref.watch(stepGoalProvider).asData?.value ?? 0;
   final stats = ref.watch(stepStatsProvider).asData?.value;
-  final steps = stats?['today'] ?? 0;
-  return steps >= goal && goal > 0;
-});
-
-final postWellnessStatusProvider = FutureProvider.family<void, String>((ref, message) async {
-  final prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('jwt_token');
-  final res = await http.post(
-    Uri.parse('$wellnessBase/activities'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode({
-      'type': 'status',
-      'message': message,
-    }),
-  );
-
-  if (res.statusCode != 200) {
-    throw Exception('Failed to post status: ${res.body}');
-  }
-
+  return (stats?['today'] ?? 0) >= goal && goal > 0;
 });
 
 final stepGoalNotifiedProvider = StateProvider<bool>((ref) => false);
+
+// ════════════════════════════════════════════════════════════════════
+//  NUTRITION & MEALS
+// ════════════════════════════════════════════════════════════════════
+
+final foodSearchProvider =
+    FutureProvider.family<List<FoodItem>, String>((ref, query) async {
+  if (query.isEmpty) return [];
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final resp = await http.get(
+    Uri.parse('$nutritionBase/foods/search?q=$query'),
+    headers: {if (token != null) 'Authorization': 'Bearer $token'},
+  );
+  if (resp.statusCode == 200) {
+    final foodsList = (jsonDecode(resp.body)['foods'] as List);
+    return foodsList.map((e) => FoodItem.fromJson(e)).toList();
+  }
+  throw Exception('Failed to search foods (${resp.statusCode})');
+});
+
+final mealsProvider = FutureProvider<List<Meal>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final resp =
+      await http.get(Uri.parse('$nutritionBase/meals'), headers: {'Authorization': 'Bearer $token'});
+  if (resp.statusCode == 200) {
+    final data = jsonDecode(resp.body);
+    if (data == null) return [];
+    return (data as List).map((e) => Meal.fromJson(e)).toList();
+  }
+  throw Exception('Failed to fetch meals');
+});
+
+final nutritionStatsProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final resp =
+      await http.get(Uri.parse('$nutritionBase/stats'), headers: {'Authorization': 'Bearer $token'});
+  if (resp.statusCode == 200) return jsonDecode(resp.body);
+  throw Exception('Failed to fetch stats');
+});
+
+final mealApiProvider = Provider((ref) => NutritionApi());
+
+final weeklyNutritionStatsProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final resp = await http.get(Uri.parse('$nutritionBase/stats/weekly'),
+      headers: {'Authorization': 'Bearer $token'});
+  if (resp.statusCode == 200) {
+    final body = jsonDecode(resp.body);
+    return body is List ? List<Map<String, dynamic>>.from(body) : [];
+  }
+  throw Exception('Failed to fetch weekly nutrition');
+});
+
+final todayWaterProvider = FutureProvider<Map<String, dynamic>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final resp =
+      await http.get(Uri.parse('$nutritionBase/water/today'), headers: {'Authorization': 'Bearer $token'});
+  if (resp.statusCode == 200) return jsonDecode(resp.body);
+  throw Exception('Failed to fetch water stats');
+});
+
+final weeklyWaterProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final resp =
+      await http.get(Uri.parse('$nutritionBase/water/weekly'), headers: {'Authorization': 'Bearer $token'});
+  if (resp.statusCode == 200) {
+    final decoded = jsonDecode(resp.body);
+    if (decoded == null) return [];
+    if (decoded is List) return List<Map<String, dynamic>>.from(decoded);
+    throw Exception('Expected a list but got ${decoded.runtimeType}');
+  }
+  throw Exception('Failed to fetch weekly water');
+});
+
+final setWaterGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final response = await http.post(Uri.parse('$nutritionBase/water/goal'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'goal_ml': goal}));
+  if (response.statusCode != 200) throw Exception('Failed to set water goal');
+});
+
+final waterGoalProvider = FutureProvider<int>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final response =
+      await http.get(Uri.parse('$nutritionBase/water/goal'), headers: {'Authorization': 'Bearer $token'});
+  if (response.statusCode == 200) return jsonDecode(response.body)['goal_ml'];
+  throw Exception('Failed to get water goal');
+});
+
+final setCalorieGoalProvider = FutureProvider.family<void, int>((ref, goal) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final response = await http.post(Uri.parse('$nutritionBase/calories/goal'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'goal': goal}));
+  if (response.statusCode != 200) throw Exception('Failed to set calorie goal');
+});
+
+final calorieGoalProvider = FutureProvider<int>((ref) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final response =
+      await http.get(Uri.parse('$nutritionBase/calories/goal'), headers: {'Authorization': 'Bearer $token'});
+  if (response.statusCode == 200) return jsonDecode(response.body)['goal'];
+  throw Exception('Failed to get calorie goal');
+});
+
+// ════════════════════════════════════════════════════════════════════
+//  WELLNESS FEED & ACHIEVEMENT-SHARING
+// ════════════════════════════════════════════════════════════════════
+
+final wellnessApiProvider = Provider((ref) => WellnessApi());
+
+final friendActivitiesProvider = FutureProvider<List<PostActivity>>(
+    (ref) => ref.read(wellnessApiProvider).fetchFriendActivities());
 
 final cachedAchievementIdsProvider = StateProvider<List<String>>((ref) => []);
 
@@ -441,17 +340,16 @@ final loadCachedAchievementsProvider = FutureProvider<void>((ref) async {
 final unsharedAchievementsProvider = Provider<List<Achievement>>((ref) {
   final achievementsAsync = ref.watch(userAchievementsProvider);
   final cached = ref.watch(cachedAchievementIdsProvider);
-
   return achievementsAsync.when(
-    data: (achievements) => achievements
-        .where((a) => a.unlocked && !cached.contains(a.id))
-        .toList(),
+    data: (achievements) =>
+        achievements.where((a) => a.unlocked && !cached.contains(a.id)).toList(),
     loading: () => [],
     error: (_, __) => [],
   );
 });
 
-final markAchievementSharedProvider = Provider.family<Future<void>, String>((ref, achievementId) async {
+final markAchievementSharedProvider =
+    Provider.family<Future<void>, String>((ref, achievementId) async {
   final prefs = await SharedPreferences.getInstance();
   final current = List<String>.from(ref.read(cachedAchievementIdsProvider));
   if (!current.contains(achievementId)) {
@@ -461,6 +359,23 @@ final markAchievementSharedProvider = Provider.family<Future<void>, String>((ref
   }
 });
 
+final postWellnessStatusProvider =
+    FutureProvider.family<void, String>((ref, message) async {
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token');
+  final res = await http.post(Uri.parse('$wellnessBase/activities'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'type': 'status', 'message': message}));
+  if (res.statusCode != 200) throw Exception('Failed to post status: ${res.body}');
+});
+
+// ════════════════════════════════════════════════════════════════════
+//  CHAT
+// ════════════════════════════════════════════════════════════════════
+
 const _chatBaseUrl = '$wellnessBase';
 
 final chatApiProvider = Provider((ref) => ChatApi(baseUrl: _chatBaseUrl));
@@ -469,21 +384,12 @@ final chatListProvider = FutureProvider<List<Map<String, String>>>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   if (token == null) throw Exception('Not authenticated');
-
-  final res = await http.get(
-    Uri.parse('$_chatBaseUrl/friends'),
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
-
-  if (res.statusCode != 200) {
-    throw Exception('Failed to fetch chat list: ${res.body}');
-  }
-
-  final data = jsonDecode(res.body) as List;
-
-  return data.map((e) => Map<String, String>.from(e)).toList();
+  final res =
+      await http.get(Uri.parse('$_chatBaseUrl/friends'), headers: {'Authorization': 'Bearer $token'});
+  if (res.statusCode != 200) throw Exception('Failed to fetch chat list: ${res.body}');
+  return (jsonDecode(res.body) as List)
+      .map((e) => Map<String, String>.from(e))
+      .toList();
 });
 
 final messagesProvider =
@@ -491,20 +397,10 @@ final messagesProvider =
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   if (token == null) throw Exception('Not authenticated');
-
-  final res = await http.get(
-    Uri.parse('$_chatBaseUrl/messages/$friendName'),
-    headers: {
-      'Authorization': 'Bearer $token',
-    },
-  );
-
-  if (res.statusCode != 200) {
-    throw Exception('Failed to fetch messages: ${res.body}');
-  }
-
-  final data = jsonDecode(res.body) as List;
-  return data
+  final res = await http.get(Uri.parse('$_chatBaseUrl/messages/$friendName'),
+      headers: {'Authorization': 'Bearer $token'});
+  if (res.statusCode != 200) throw Exception('Failed to fetch messages: ${res.body}');
+  return (jsonDecode(res.body) as List)
       .map((json) => Message.fromJson(json as Map<String, dynamic>))
       .toList();
 });
@@ -514,19 +410,13 @@ final postMessageProvider =
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
   if (token == null) throw Exception('Not authenticated');
-
-  final res = await http.post(
-    Uri.parse('$_chatBaseUrl/messages'),
-    headers: {
-      'Authorization': 'Bearer $token',
-      'Content-Type': 'application/json',
-    },
-    body: jsonEncode(message.toJson()),
-  );
-
-  if (res.statusCode != 200) {
-    throw Exception('Failed to send message: ${res.body}');
-  }
+  final res = await http.post(Uri.parse('$_chatBaseUrl/messages'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(message.toJson()));
+  if (res.statusCode != 200) throw Exception('Failed to send message: ${res.body}');
 });
 
 class ChatController extends StateNotifier<WebSocketChannel?> {
@@ -555,29 +445,25 @@ class ChatController extends StateNotifier<WebSocketChannel?> {
   }
 }
 
-final chatControllerProvider = StateNotifierProvider
-    .family<ChatController, WebSocketChannel?, String>((ref, userId) {
+final chatControllerProvider =
+    StateNotifierProvider.family<ChatController, WebSocketChannel?, String>((ref, userId) {
   final api = ref.watch(chatApiProvider);
   return ChatController(api: api, userId: userId);
 });
 
 final userIdProvider = FutureProvider<String>((ref) async {
-  final prefs  = await SharedPreferences.getInstance();
-  final token  = prefs.getString('jwt_token') ?? '';
+  final prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('jwt_token') ?? '';
   if (token.isEmpty) return '';
-
   final parts = token.split('.');
   if (parts.length != 3) return '';
-
   final payload = parts[1]
       .replaceAll('-', '+')
       .replaceAll('_', '/')
       .padRight(parts[1].length + (4 - parts[1].length % 4) % 4, '=');
-
   try {
     final decoded = utf8.decode(base64.decode(payload));
-    final json    = jsonDecode(decoded);
-    return json['userId'] as String? ?? '';
+    return (jsonDecode(decoded)['userId'] as String?) ?? '';
   } catch (_) {
     return '';
   }
@@ -585,7 +471,7 @@ final userIdProvider = FutureProvider<String>((ref) async {
 
 class _ChatSession {
   final messages = <Message>[];
-  final seenIds  = <String>{};
+  final seenIds = <String>{};
   bool historyLoaded = false;
 }
 
@@ -597,40 +483,45 @@ final chatSessionProvider =
 class _ChatSessionNotifier extends StateNotifier<_ChatSession> {
   _ChatSessionNotifier() : super(_ChatSession());
 
-
   void add(Message m) {
     if (state.seenIds.add(m.id)) state.messages.add(m);
   }
 
-  void addMany(Iterable<Message> list) {
-    for (final m in list) add(m);
-  }
+  void addMany(Iterable<Message> list) => list.forEach(add);
 
   void markHistoryLoaded() => state.historyLoaded = true;
 }
 
-final challengeApiProvider = Provider((_)=>ChallengeApi());
+// ════════════════════════════════════════════════════════════════════
+//  CHALLENGES
+// ════════════════════════════════════════════════════════════════════
 
-final challengesProvider = FutureProvider<List<Challenge>>((ref) {
-  return ref.read(challengeApiProvider).list();
+final challengeApiProvider = Provider((_) => ChallengeApi());
+
+final challengesProvider = FutureProvider<List<Challenge>>(
+    (ref) => ref.read(challengeApiProvider).list());
+
+final leaderboardProvider =
+    FutureProvider.family<List<Participant>, String>((ref, id) {
+  return ref.read(challengeApiProvider).leaderboard(id);
 });
-final leaderboardProvider  = FutureProvider.family<List<Participant>,String>((ref,id)=>ref.read(challengeApiProvider).leaderboard(id));
+
 final createChallengeProvider =
     FutureProvider.family<void, Map<String, dynamic>>((ref, params) {
   return ref.read(challengeApiProvider).create(
-    params['title']       as String,
-    params['type']        as String,
-    params['target']      as int,
+    params['title'] as String,
+    params['type'] as String,
+    params['target'] as int,
     participants: (params['participants'] as List).cast<String>(),
   );
 });
 
-// returns true when *you* reached the target of this challenge
+//  Returns true when *you* reached the target of this challenge
 final challengeCompletedProvider =
     FutureProvider.family<bool, Challenge>((ref, ch) async {
   final lbs = await ref.watch(leaderboardProvider(ch.id).future);
   final uid = ref.read(userIdProvider).valueOrNull;
-  final me  = lbs.firstWhereOrNull((p) => p.userId == uid);
+  final me = lbs.firstWhereOrNull((p) => p.userId == uid);
   return me != null && me.progress >= ch.target;
 });
 

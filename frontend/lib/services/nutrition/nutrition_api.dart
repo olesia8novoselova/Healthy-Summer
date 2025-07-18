@@ -4,8 +4,12 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
 import 'package:sum25_flutter_frontend/config.dart';
+
 class NutritionApi {
   final String baseUrl = '$nutritionBase';
+
+  final http.Client _client;
+  NutritionApi({http.Client? client}) : _client = client ?? http.Client();
 
   Future<void> addMeal({
     required int fdcId,
@@ -19,7 +23,7 @@ class NutritionApi {
   }) async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
-    final resp = await http.post(
+    final resp = await _client.post(
       Uri.parse('$baseUrl/meals'),
       headers: {
         'Content-Type': 'application/json',
@@ -40,11 +44,12 @@ class NutritionApi {
       throw Exception('Failed to add meal: ${resp.body}');
     }
   }
+
   Future<List<Map<String, dynamic>>> fetchWeeklyStats() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
-    final resp = await http.get(
+    final resp = await _client.get(
       Uri.parse('$baseUrl/stats/weekly'),
       headers: {'Authorization': 'Bearer $token'},
     );
@@ -56,6 +61,8 @@ class NutritionApi {
       throw Exception('Failed to load weekly stats');
     }
   }
+
+
   final weeklyWaterProvider = FutureProvider<List<Map<String, dynamic>>>((ref) async {
   final prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('jwt_token');
